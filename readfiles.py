@@ -13,7 +13,8 @@ def readfile(fname, id):
     
     deb = 1
     
-    for i in range(id + 1):
+    for i in range(id+1):
+
         # Lire m et t pour cette instance
         m, t = map(int, lines[deb].strip().split())
         

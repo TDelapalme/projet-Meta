@@ -3,14 +3,14 @@ import random
 import numpy as np
 
 # Param
-alpha = 0.5
+alpha = 0.4
 
 class Pb:
 
     def __init__(self, file, id) -> None:
         self.file = file
         self.id = id
-        self.r, self.c, self.b, self.m, self.t = readfiles.readfile(file,1)
+        self.r, self.c, self.b, self.m, self.t = readfiles.readfile(file,id)
         #self.X = [-1]*self.t
 
     def evaluate(self,X):
@@ -47,7 +47,7 @@ def sort_affectations(Pb):
             rentabilite = Pb.c[i][j] / Pb.r[i][j]
             couples.append(((i, j), rentabilite))
     # Tri des couples en fonction de la rentabilité décroissante
-    couples_tries = sorted(couples, key=lambda x: x[1], reverse=True)
+    couples_tries = sorted(couples, key=lambda x: x[1], reverse=False)
     return couples_tries   
 
 def sol_gloutonne(Pb):
@@ -56,6 +56,8 @@ def sol_gloutonne(Pb):
     assigned_tasks=0
     for couple in couples_tries:
         agent,tache = couple[0]
+        #print((sol[tache] == -1),(Pb.realisabilite_agent(agent,sol) - Pb.r[agent][tache] >= 0),alpha>random.random())
+
         if (sol[tache] == -1) and (Pb.realisabilite_agent(agent,sol) - Pb.r[agent][tache] >= 0):
             sol[tache] = agent
             assigned_tasks +=1
@@ -68,17 +70,31 @@ def est_complete(X):
     return all(x != -1 for x in X)
 
 def sol_gloutonne_stoch(Pb):
-    couples_tries = sort_affectations(Pb) # tester non trié ?
-    sol = [-1]*Pb.t
-    i=0
-
-    for couple in couples_tries:
+    couples_tries = sort_affectations(Pb) 
+    t = Pb.t
+    sol = [-1]*t
+    i,j,l=0,0,t*Pb.m
+    max_iter = 2*l
+    r=0
+    while i<t:
+        couple = couples_tries[j%l]
         agent,tache = couple[0]
+
         if (sol[tache] == -1) and (Pb.realisabilite_agent(agent,sol) - Pb.r[agent][tache] >= 0) and alpha>random.random():
             sol[tache] = agent
             i +=1
-        if i == Pb.t:
-            break
+
+        if j>max_iter: #réaffectation des taches les plus couteuses pour éviter des boucles infinies
+            taches_r_sorted = sorted(range(t), key=lambda k: max(Pb.r[agent][k] for agent in range(Pb.m)), reverse=True)
+            for k in taches_r_sorted[:t//5]:
+                sol[k] = -1
+            i = sum(1 for x in sol if x != -1)  # Recompter les tâches assignées
+            r+=1
+            j = 0
+
+
+        j += 1 
+
     return sol
 
 def sol_gloutonne_stoch_complete(Pb):
@@ -94,9 +110,12 @@ def fam_sols(Pb):
     return solutions_famille
 
 
-"""Pb1 =  Pb("instances/gap1.txt",0)
+Pb1 =  Pb("instances/gapa.txt",1)
+sol = sol_gloutonne(Pb1)
+print(Pb1.evaluate(sol))
+
 sols_fam = fam_sols(Pb1)
 for i in range(40):
-    print(sols_fam[i], Pb1.evaluate(sols_fam[i]))
-print(np.mean([Pb1.evaluate(sols_fam[i]) for i in range(40)]))"""
+    print(Pb1.evaluate(sols_fam[i]))
+print(np.min([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
 
