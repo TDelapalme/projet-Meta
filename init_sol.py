@@ -47,7 +47,7 @@ def sort_affectations(Pb):
             rentabilite = Pb.c[i][j] / Pb.r[i][j]
             couples.append(((i, j), rentabilite))
     # Tri des couples en fonction de la rentabilité décroissante
-    couples_tries = sorted(couples, key=lambda x: x[1], reverse=False)
+    couples_tries = sorted(couples, key=lambda x: x[1], reverse=True)
     return couples_tries   
 
 def sol_gloutonne(Pb):
@@ -70,52 +70,47 @@ def est_complete(X):
     return all(x != -1 for x in X)
 
 def sol_gloutonne_stoch(Pb):
-    couples_tries = sort_affectations(Pb) 
+    couples_tries = sort_affectations(Pb)
     t = Pb.t
-    sol = [-1]*t
-    i,j,l=0,0,t*Pb.m
-    max_iter = 2*l
-    r=0
-    while i<t:
-        couple = couples_tries[j%l]
-        agent,tache = couple[0]
+    sol = [-1] * t
+    assigned_tasks = 0
+    attempts = 0  # Safety counter for retries
+    max_attempts = 5 * t * Pb.m  # Set maximum retries for safety
 
-        if (sol[tache] == -1) and (Pb.realisabilite_agent(agent,sol) - Pb.r[agent][tache] >= 0) and alpha>random.random():
+    while assigned_tasks < t and attempts < max_attempts:
+        couple = couples_tries[attempts % len(couples_tries)]
+        agent, tache = couple[0]
+        if (sol[tache] == -1) and (Pb.realisabilite_agent(agent, sol) - Pb.r[agent][tache] >= 0) and (alpha > random.random()):
             sol[tache] = agent
-            i +=1
+            assigned_tasks += 1
+        attempts += 1
 
-        if j>max_iter: #réaffectation des taches les plus couteuses pour éviter des boucles infinies
-            taches_r_sorted = sorted(range(t), key=lambda k: max(Pb.r[agent][k] for agent in range(Pb.m)), reverse=True)
-            for k in taches_r_sorted[:t//5]:
-                sol[k] = -1
-            i = sum(1 for x in sol if x != -1)  # Recompter les tâches assignées
-            r+=1
-            j = 0
-
-
-        j += 1 
+        # If progress is slow, unassign tasks with high resource usage to retry
+        if attempts > 2 * len(couples_tries):
+            assigned_tasks_sorted = sorted(
+                [(t, Pb.r[sol[t], t]) for t in range(t) if sol[t] != -1],
+                key=lambda x: -x[1]
+            )
+            for k, _ in assigned_tasks_sorted[:len(assigned_tasks_sorted) // 5]:
+                sol[k] = -1  # Unassign some tasks for retry
+            assigned_tasks = sum(1 for x in sol if x != -1)  # Recount
 
     return sol
 
-def sol_gloutonne_stoch_complete(Pb):
-    sol = sol_gloutonne_stoch(Pb)
-    while not est_complete(sol):
-        sol = sol_gloutonne_stoch(Pb)
-    return sol
 
 def fam_sols(Pb):
     N=40
     N = 40
-    solutions_famille = [sol_gloutonne_stoch_complete(Pb) for _ in range(N)]
+    solutions_famille = [sol_gloutonne_stoch(Pb) for _ in range(N)]
     return solutions_famille
 
 
-Pb1 =  Pb("instances/gapa.txt",1)
+Pb1 =  Pb("instances/gapa1.txt",0)
 sol = sol_gloutonne(Pb1)
 print(Pb1.evaluate(sol))
 
 sols_fam = fam_sols(Pb1)
 for i in range(40):
     print(Pb1.evaluate(sols_fam[i]))
-print(np.min([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
+print(np.max([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
 
