@@ -109,6 +109,8 @@ def sol_gloutonne_2(Pb, critere = 'max'):
             assigned_tasks +=1
         if assigned_tasks == Pb.t:
             break
+    Pb.eval()
+    Pb.capacites_residuelles()
     return Pb.x
 
 def est_complete(X):
