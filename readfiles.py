@@ -1,6 +1,16 @@
 import numpy as np
 
 def readfile(fname, id):
+    """ retourne les paramètres d'une instance.
+            fname: l'adresse du fichier
+            id: le numéro de l'instance dans le fichier
+        
+        retourne les paramètres:
+            r: matrice des ressources
+            c: matrice des gains/coûts
+            b: vecteur des capacités
+            m: nombre d'agents
+            t: nombres de tâches"""
     
     with open(fname, 'r') as f:
         lines = f.readlines()

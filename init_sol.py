@@ -5,16 +5,19 @@ import numpy as np
 # Param
 alpha = 0.4
 
-#une solution x est une liste de taille T le nb de tâches. x[t] contient la valeur de la machine à laquelle t est affectée.
+# une solution x est une liste de taille T le nb de tâches. 
+# x[t] contient la valeur de la machine à laquelle t est affectée. si x[t] = -1 c'est que la tâche n'est pas affectée.
 class Pb:
 
     def __init__(self, file, id) -> None:
+
         self.file = file
         self.id = id
         self.r, self.c, self.b, self.m, self.t = readfiles.readfile(file,id)
         #self.X = [-1]*self.t
-        self.x = -np.ones(self.t)
-        
+        self.x = -np.ones(self.t, dtype=int)
+        self.b_res = np.copy(self.b)
+        self.f = 0
 
     def evaluate(self,X):
         f = 0
@@ -23,6 +26,10 @@ class Pb:
             f += self.c[a,tache]
         self.f = f
         return f
+    
+    def eval(self):
+        self.f = np.sum([self.c[self.x[t],t] for t in range(self.t)])
+        return self.f
     
     def realisabilite_agent(self, agent, X):
         # Vérifie si un agent peut effectuer les tâches qui lui sont assignées
@@ -33,8 +40,7 @@ class Pb:
         return capacite_restante
     
     def capacites_residuelles(self):
-        # calcul des capacités résiduelles et conservées comme attributs.
-        self.b_res = np.copy(self.b)
+        # maj des capacités résiduelles.
         for agent in range(self.m):
             self.b_res[agent] = self.realisabilite_agent(agent, self.x)
         return None
@@ -59,7 +65,19 @@ def sort_affectations(Pb):
             couples.append(((i, j), rentabilite))
     # Tri des couples en fonction de la rentabilité décroissante
     couples_tries = sorted(couples, key=lambda x: x[1], reverse=True)
-    return couples_tries   
+    return couples_tries 
+
+def sort_affectations_crit(Pb, critere = 'max'):
+
+    # Calcul des ratios de rentabilité (coût / ressource) pour chaque (agent, tâche)
+    couples = []
+    for i in range(Pb.m):
+        for j in range(Pb.t):
+            rentabilite = Pb.c[i][j] / Pb.r[i][j]
+            couples.append(((i, j), rentabilite))
+    # Tri des couples en fonction de la rentabilité décroissante
+    couples_tries = sorted(couples, key=lambda x: x[1], reverse=(critere=='max'))
+    return couples_tries  
 
 def sol_gloutonne(Pb):
     couples_tries = sort_affectations(Pb)
@@ -76,6 +94,23 @@ def sol_gloutonne(Pb):
             break
     return sol
     
+def sol_gloutonne_2(Pb, critere = 'max'):
+    # plus efficace que sol_gloutonne mais même principe.
+    # retourne la solution et si elle est valable (ie ttes les taches sont affectées)
+    couples_tries = sort_affectations_crit(Pb, critere)
+    assigned_tasks=0
+    for couple in couples_tries:
+        agent,tache = couple[0]
+        #print((sol[tache] == -1),(Pb.realisabilite_agent(agent,sol) - Pb.r[agent][tache] >= 0),alpha>random.random())
+
+        if (Pb.x[tache] == -1) and (Pb.b_res[agent] - Pb.r[agent][tache] >= 0):
+            Pb.x[tache] = agent
+            Pb.b_res[agent] = Pb.b_res[agent] - Pb.r[agent][tache]
+            assigned_tasks +=1
+        if assigned_tasks == Pb.t:
+            break
+    return Pb.x
+
 def est_complete(X):
     # Vérifie si toutes les tâches sont affectées
     return all(x != -1 for x in X)
@@ -116,12 +151,12 @@ def fam_sols(Pb):
     return solutions_famille
 
 
-Pb1 =  Pb("instances/gapa1.txt",0)
-sol = sol_gloutonne(Pb1)
-print(Pb1.evaluate(sol))
+# Pb1 =  Pb("instances/gapa1.txt",0)
+# sol = sol_gloutonne(Pb1)
+# print(Pb1.evaluate(sol))
 
-sols_fam = fam_sols(Pb1)
-for i in range(40):
-    print(Pb1.evaluate(sols_fam[i]))
-print(np.max([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
+# sols_fam = fam_sols(Pb1)
+# for i in range(40):
+#     print(Pb1.evaluate(sols_fam[i]))
+# print(np.max([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
 
