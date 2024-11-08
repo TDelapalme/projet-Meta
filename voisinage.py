@@ -12,8 +12,9 @@ def reaffectation_1tache(pb, delta_f,j,t):
     pb.b_res[pb.x[t]]  = pb.b_res[pb.x[t]] + pb.r[pb.x[t],t]
     pb.b_res[j] = pb.b_res[j] - pb.r[j,t]
     # affectation
+    ancien_agent = pb.x[t]
     pb.x[t] = j
-    pass
+    return ancien_agent
 
 def cout_reaffectation_1tache(pb, j,t):
     # calcul de réalisabilité et de la nouvelle valeur
@@ -146,9 +147,11 @@ def un_pas_reaffectation(pb, critere = 'max'):
     else:
         return descente_reaffectation_un_pas(pb)
 
-def montee(pb, fn_initialisation, fn_un_pas, critere = 'max'):
+def montee(pb, fn_initialisation, fn_un_pas, init, critere = 'max'):
     # print("initialisation..")
-    fn_initialisation(pb, critere)
+    if init:
+        fn_initialisation(pb, critere)
+
     val_initiale = pb.eval()
     pb.capacites_residuelles()
     if not init_sol.est_complete(pb.x):
@@ -166,11 +169,11 @@ def montee(pb, fn_initialisation, fn_un_pas, critere = 'max'):
     # print("optimum local pas trouvé.")
     return pb.f, val_initiale, pb.x, iter
 
-def montee_timeMax(pb, fn_initialisation, fn_un_pas, timeMax = 300, critere = 'max'):
+def montee_timeMax(pb, fn_initialisation, fn_un_pas, timeMax = 300, critere = 'max', init = True):
     global stopMontee
     stopMontee = False
     start = time.time()
-    thread = Thread(target=montee, args = [pb, fn_initialisation, fn_un_pas, critere])
+    thread = Thread(target=montee, args = [pb, fn_initialisation, fn_un_pas, init, critere])
     # Start the thread
     thread.start()
 
