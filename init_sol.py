@@ -5,6 +5,7 @@ import numpy as np
 # Param
 alpha = 0.4
 
+#une solution x est une liste de taille T le nb de tâches. x[t] contient la valeur de la machine à laquelle t est affectée.
 class Pb:
 
     def __init__(self, file, id) -> None:
@@ -12,12 +13,15 @@ class Pb:
         self.id = id
         self.r, self.c, self.b, self.m, self.t = readfiles.readfile(file,id)
         #self.X = [-1]*self.t
+        self.x = -np.ones(self.t)
+        
 
     def evaluate(self,X):
         f = 0
         for tache in range(len(X)):
             a = X[tache]
             f += self.c[a,tache]
+        self.f = f
         return f
     
     def realisabilite_agent(self, agent, X):
@@ -27,6 +31,13 @@ class Pb:
             if X[tache] == agent:
                 capacite_restante -= self.r[agent][tache]
         return capacite_restante
+    
+    def capacites_residuelles(self):
+        # calcul des capacités résiduelles et conservées comme attributs.
+        self.b_res = np.copy(self.b)
+        for agent in range(self.m):
+            self.b_res[agent] = self.realisabilite_agent(agent, self.x)
+        return None
         
     def realisabilite(self,X):
         # Calcule la faisabilité totale de la solution
