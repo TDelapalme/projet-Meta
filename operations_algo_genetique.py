@@ -93,16 +93,16 @@ def new_pop(sols_fam, Pb, critere='max'):
     return pop
 
 def best_element(pop, Pb, critere):
-    id_opt = 0
-    opt = Pb.evaluate(pop[id_opt])
-    for id in range(1,len(pop)):
-        if Pb.evaluate(pop[id])>opt and critere=='max':
-            opt=Pb.evaluate(pop[id])
-            id_opt = id
-        if Pb.evaluate(pop[id])<opt and critere=='min':
-            opt=Pb.evaluate(pop[id])
-            id_opt = id
-    return id_opt,opt
+    sol_opt = pop[0]
+    opt = Pb.evaluate(sol_opt)
+    for sol in pop:
+        if Pb.evaluate(sol)>opt and critere=='max':
+            opt=Pb.evaluate(sol)
+            sol_opt = sol
+        if Pb.evaluate(sol)<opt and critere=='min':
+            opt=Pb.evaluate(sol)
+            sol_opt = sol
+    return sol_opt,opt
         
 
 
@@ -116,7 +116,7 @@ def evolution(Pb,critere= 'max'):
         children = new_pop(pop,Pb,critere)
         children_ameliores = descente_pop(children,Pb,critere)
         best_child = best_element(children_ameliores,Pb,critere)
-        print(best_child[1])
+        #print(best_child[1])
         if best_child[1]>best[1]:
             best = best_child
     

@@ -199,7 +199,7 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
             best_x = np.copy(pb.x)
             derniere_amelioration = time.time()
         if tentative - derniere_amelioration >=timeMaxAmelio:
-            print("pas d'amélioration en ", timeMaxAmelio,"s.")
+            #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
     
     resultat.put((best_f, best_x, val_initial))
@@ -235,7 +235,7 @@ def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas
             best_x = np.copy(pb.x)
             derniere_amelioration = time.time()
         if tentative - derniere_amelioration >=timeMaxAmelio:
-            print("pas d'amélioration en ", timeMaxAmelio,"s.")
+            #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
     
     resultat.put((best_f, best_x, val_initial))
@@ -272,7 +272,7 @@ def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, cri
         elif tentative - derniere_amelioration >=timeMaxAmelio//2:
             liste_taboue.etendre(int(liste_taboue.taille_max*1.5))
         if tentative - derniere_amelioration >= timeMaxAmelio:
-            print("pas d'amélioration en ", timeMaxAmelio,"s.")
+            #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
     
     resultat.put((best_f, best_x, val_initial))
@@ -316,7 +316,7 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
         elif tentative - derniere_amelioration >=timeMaxAmelio//2:
             liste_taboue.etendre(int(liste_taboue.taille_max*1.5))
         if tentative - derniere_amelioration >= timeMaxAmelio:
-            print("pas d'amélioration en ", timeMaxAmelio,"s.")
+            #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
     
     resultat.put((best_f, best_x, val_initial))
