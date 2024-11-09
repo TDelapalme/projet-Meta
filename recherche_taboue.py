@@ -127,24 +127,31 @@ def montee_un_pas_tabou_swap(pb, best_f, critere_tabou, liste_taboue, aspiration
         Les couples de la liste taboue sont les affectations qui ont été rompues..
         La variable aspiration indique s'il y a le critère d'aspiration."""
     
-    delta_f_max = -2*np.max(pb.c)
-    best_reaffect = (-1,-1)
+    delta_f_max = -10000
+    mod = False
+    best_swap = (-1,-1)
     for t1 in range(pb.t):
-        for t2 in range(pb.t):
+        for t2 in range(t1+1,pb.t):
             real, delta_f = v.cout_swap_taches(pb, t1,t2)
-            if real and delta_f > delta_f_max:
+            if real and delta_f > delta_f_max and pb.x[t1]!=pb.x[t2]:
+
                 if aspiration and pb.f + delta_f > best_f:
                     delta_f_max = delta_f
                     best_swap = (t1,t2)
+                    mod = True
                 elif not critere_tabou(liste_taboue, (t1,t2)):
                     delta_f_max = delta_f
                     best_swap = (t1,t2)
-
-    v.swap_taches(pb, delta_f_max, best_swap[0],best_swap[1])
-    liste_taboue.ajouter(best_swap)
-    if pb.f > best_f:
-        return True
-    return False
+                    mod = True
+    # print(best_swap, delta_f_max, pb.x[best_swap[0]]==pb.x[best_swap[1]] )
+    if mod:
+        v.swap_taches(pb, delta_f_max, best_swap[0],best_swap[1])
+        liste_taboue.ajouter(best_swap)
+        if pb.f > best_f:
+            return True
+        return False
+    else :
+        return False
 # *******************************************************************************************************************************
 # Fonctions globales de recherche taboue
     

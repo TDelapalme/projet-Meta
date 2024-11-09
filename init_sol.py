@@ -54,6 +54,41 @@ class Pb:
                 deficit_total += capacite_agent
         return deficit_total
 
+class Pb_genetique:
+
+    def __init__(self, file, id) -> None:
+
+        self.file = file
+        self.id = id
+        self.r, self.c, self.b, self.m, self.t = readfiles.readfile(file,id)
+
+
+    def evaluate(self,X):
+        f = 0
+        for tache in range(len(X)):
+            a = X[tache]
+            f += self.c[a,tache]
+        self.f = f
+        return f
+
+    
+    def realisabilite_agent(self, agent, X):
+        # Vérifie si un agent peut effectuer les tâches qui lui sont assignées
+        capacite_restante = self.b[agent]
+        for tache in range(self.t):
+            if X[tache] == agent:
+                capacite_restante -= self.r[agent][tache]
+        return capacite_restante
+    
+        
+    def realisabilite(self,X):
+        # Calcule la faisabilité totale de la solution
+        deficit_total = 0
+        for agent in range(self.m):
+            capacite_agent = self.realisabilite_agent(agent, X)
+            if capacite_agent < 0:
+                deficit_total += capacite_agent
+        return deficit_total
 
 def sort_affectations(Pb):
 
