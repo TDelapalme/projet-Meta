@@ -165,8 +165,8 @@ def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
 
 def sol_gloutonne_stoch_4(Pb, critere = 'max'):
 
-    # On bruite legerement la liste trié pour obtenir des solutions différentes à chaque appel
-    alpha = 0.8
+    # On bruite la liste trié pour obtenir des solutions différentes à chaque appel
+    alpha = 0.1
     sorted_affectations = sort_affectations_crit(Pb, critere)
     for i in range(len(sorted_affectations)-1):
         if random.random()>alpha:
