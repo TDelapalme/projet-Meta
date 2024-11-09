@@ -81,6 +81,18 @@ class Pb_genetique: # Même chose mais la solution n'est pas définie à l'inter
                 deficit_total += capacite_agent
         return deficit_total
 
+def sort_affectations(Pb):
+
+    # Calcul des ratios de rentabilité (coût / ressource) pour chaque (agent, tâche)
+    couples = []
+    for i in range(Pb.m):
+        for j in range(Pb.t):
+            rentabilite = Pb.c[i][j] / Pb.r[i][j]
+            couples.append(((i, j), rentabilite))
+    # Tri des couples en fonction de la rentabilité décroissante
+    couples_tries = sorted(couples, key=lambda x: x[1], reverse=True)
+    return couples_tries 
+
 def sort_affectations_crit(Pb, critere = 'max'):
 
     # Calcul des ratios de rentabilité (coût / ressource) pour chaque (agent, tâche)
@@ -100,11 +112,13 @@ def sort_affectations_crit(Pb, critere = 'max'):
     return couples_tries  
 
 def sol_gloutonne(Pb):
-    couples_tries = sort_affectations_crit(Pb)
+    couples_tries = sort_affectations(Pb)
     sol = [-1]*Pb.t
     assigned_tasks=0
     for couple in couples_tries:
         agent,tache = couple[0]
+        #print((sol[tache] == -1),(Pb.realisabilite_agent(agent,sol) - Pb.r[agent][tache] >= 0),alpha>random.random())
+
         if (sol[tache] == -1) and (Pb.realisabilite_agent(agent,sol) - Pb.r[agent][tache] >= 0):
             sol[tache] = agent
             assigned_tasks +=1
@@ -119,6 +133,8 @@ def sol_gloutonne_2(Pb, critere = 'max'):
     assigned_tasks=0
     for couple in couples_tries:
         agent,tache = couple[0]
+        #print((sol[tache] == -1),(Pb.realisabilite_agent(agent,sol) - Pb.r[agent][tache] >= 0),alpha>random.random())
+
         if (Pb.x[tache] == -1) and (Pb.b_res[agent] - Pb.r[agent][tache] >= 0):
             Pb.x[tache] = agent
             Pb.b_res[agent] = Pb.b_res[agent] - Pb.r[agent][tache]
@@ -133,10 +149,46 @@ def est_complete(X):
     # Vérifie si toutes les tâches sont affectées
     return all(x != -1 for x in X)
 
+def sol_gloutonne_stoch(Pb):
+    couples_tries = sort_affectations_crit(Pb)
+    t = Pb.t
+    sol = [-1] * t
+    assigned_tasks = 0
+    attempts = 0  # Safety counter for retries
+    max_attempts = 5 * t * Pb.m  # Set maximum retries for safety
+
+    while assigned_tasks < t and attempts < max_attempts:
+        couple = couples_tries[attempts % len(couples_tries)]
+        agent, tache = couple[0]
+        if (sol[tache] == -1) and (Pb.realisabilite_agent(agent, sol) - Pb.r[agent][tache] >= 0) and (alpha > random.random()):
+            sol[tache] = agent
+            assigned_tasks += 1
+        attempts += 1
+
+        # If progress is slow, unassign tasks with high resource usage to retry
+        if attempts > 2 * len(couples_tries):
+            assigned_tasks_sorted = sorted(
+                [(t, Pb.r[sol[t], t]) for t in range(t) if sol[t] != -1],
+                key=lambda x: -x[1]
+            )
+            for k, _ in assigned_tasks_sorted[:len(assigned_tasks_sorted) // 5]:
+                sol[k] = -1  # Unassign some tasks for retry
+            assigned_tasks = sum(1 for x in sol if x != -1)  # Recount
+
+    return sol
+
+
+def est_complete(X):
+    # Vérifie si toutes les tâches sont affectées
+    return all(x != -1 for x in X)
+
 def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
 
+    #print(f"Solution courante : {sol}")
     # Si toutes les variables sont assignées, retourner la solution
+
     if est_complete(sol):
+        # print(sol)
         return sol
 
     unassigned_tasks = [i for i in range(Pb.t) if sol[i]==-1]
