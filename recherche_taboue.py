@@ -24,7 +24,16 @@ class ListeTaboue:
         # si la fin de la file est en bout de tableau, on la ramène au début
         if self.indice_fin == self.taille_max:
             self.indice_fin = 0
+        pass
+
+    def vider(self):
+        self.liste = -np.ones((self.taille_max, 2))
+        self.indice_fin = 0
+        pass
             
+    def etendre(self, taille_max):
+        copie = np.copy(self.liste)
+        self.liste = 
 # *******************************************************************************************************************************
 # Fonctions pour une étape de recherche taboue avec réaffectation 
 
@@ -113,9 +122,8 @@ def montee_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_tabo
 
     ancien_agent = v.reaffectation_1tache(pb, delta_f_max, best_reaffect[0],best_reaffect[1])
     liste_taboue.ajouter(best_reaffect[1])
-    if pb.f > best_f:
-        return True
-    return False
+    return pb.f > best_f
+
 
 #----------------------------------------------------------------------
 # Fonctions de montée d'un pas pour le swap
@@ -147,10 +155,8 @@ def montee_un_pas_tabou_swap(pb, best_f, critere_tabou, liste_taboue, aspiration
     if mod:
         v.swap_taches(pb, delta_f_max, best_swap[0],best_swap[1])
         liste_taboue.ajouter(best_swap)
-        if pb.f > best_f:
-            return True
-        return False
-    else :
+        return pb.f > best_f
+    else:
         return False
 # *******************************************************************************************************************************
 # Fonctions globales de recherche taboue
@@ -185,13 +191,80 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
     resultat.put((best_f, best_x, val_initial))
     return None
 
-def recherche_taboue_timeMax(pb, fn_init, fn_un_pas, critere_tabou, taille_liste,
+def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
+                     init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+    liste_taboue = ListeTaboue(taille_liste)
+    if init:
+        fn_init(pb, critere)
+
+    best_f = pb.eval()
+    val_initial = pb.f
+    best_x = np.copy(pb.x)
+    pb.capacites_residuelles()
+    if not init_sol.est_complete(pb.x):
+        print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
+        pb.f = -1
+        resultat.put((-1, best_x, -1))
+        return None
+    derniere_amelioration = time.time()
+    while not stopMontee:
+        amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
+        tentative = time.time()
+        if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
+            f, temps = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, timeMax = 2, critere = 'max', init = False)
+            liste_taboue.vider()
+        if pb.f>best_f:
+            best_f = pb.f
+            best_x = np.copy(pb.x)
+            derniere_amelioration = time.time()
+        if tentative - derniere_amelioration >=timeMaxAmelio:
+            print("pas d'amélioration en ", timeMaxAmelio,"s.")
+            break
+    
+    resultat.put((best_f, best_x, val_initial))
+    return None
+
+def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
+                     init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+    liste_taboue = ListeTaboue(taille_liste)
+    if init:
+        fn_init(pb, critere)
+
+    best_f = pb.eval()
+    val_initial = pb.f
+    best_x = np.copy(pb.x)
+    pb.capacites_residuelles()
+    if not init_sol.est_complete(pb.x):
+        print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
+        pb.f = -1
+        resultat.put((-1, best_x, -1))
+        return None
+    derniere_amelioration = time.time()
+    while not stopMontee:
+        amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
+        tentative = time.time()
+        if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
+            f, temps = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, timeMax = 2, critere = 'max', init = False)
+            liste_taboue.vider()
+        if pb.f>best_f:
+            best_f = pb.f
+            best_x = np.copy(pb.x)
+            derniere_amelioration = time.time()
+        if tentative - derniere_amelioration >=timeMaxAmelio//2:
+            liste_taboue.taille_max = int(liste_taboue.taille_max*1.2)
+            print("pas d'amélioration en ", timeMaxAmelio,"s.")
+            break
+    
+    resultat.put((best_f, best_x, val_initial))
+    return None
+
+def recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, critere_tabou, taille_liste,
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
     global stopMontee
     stopMontee = False
     resultat = queue.Queue()
     start = time.time()
-    thread = Thread(target=recherche_taboue, args = [pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
+    thread = Thread(target=fn_rt, args = [pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
                                                      init, aspiration, critere, timeMaxAmelio])
     # Start the thread
     thread.start()
