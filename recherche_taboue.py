@@ -30,10 +30,23 @@ class ListeTaboue:
         self.liste = -np.ones((self.taille_max, 2))
         self.indice_fin = 0
         pass
+
+    def reduire(self, taille_max):
+        copie = np.copy(self.liste)
+        self.liste = -np.ones((taille_max, 2))
+        for i in range(1,taille_max+1):
+            self.liste[-i] = copie[(self.indice_fin-i)%taille_max]
+        self.indice_fin = 0
+        self.taille_max = taille_max
             
     def etendre(self, taille_max):
         copie = np.copy(self.liste)
-        self.liste = 
+        self.liste = -np.ones((taille_max, 2))
+        for i in range(self.taille_max):
+            self.liste[i] = copie[(i+self.indice_fin)%self.taille_max]
+        self.indice_fin = self.taille_max
+        self.taille_max = taille_max
+
 # *******************************************************************************************************************************
 # Fonctions pour une étape de recherche taboue avec réaffectation 
 
@@ -159,10 +172,11 @@ def montee_un_pas_tabou_swap(pb, best_f, critere_tabou, liste_taboue, aspiration
     else:
         return False
 # *******************************************************************************************************************************
-# Fonctions globales de recherche taboue
+# Fonctions de recherche taboue
     
 def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
                      init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+    """recherche taboue initiale. On s'interrompt si la solution n'a pas été améliorée pendant timeMaxAmelio secondes."""
     liste_taboue = ListeTaboue(taille_liste)
     if init:
         fn_init(pb, critere)
@@ -193,6 +207,9 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
 
 def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                      init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+    """ recherche taboue initiale avec intensification.
+    On realise une recherche locale simple pour chaque solution prometteuse (=proche de la meilleure rencontrée)
+    Apres on repart de cette solution comme départ (avec une liste taboue vide)."""
     liste_taboue = ListeTaboue(taille_liste)
     if init:
         fn_init(pb, critere)
@@ -226,6 +243,8 @@ def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas
 
 def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                      init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+    """Comme la précédente avec de la diversification:
+        Au bout de la moitié du temps limite sans amélioration, on augmente la taille de la liste taboue"""
     liste_taboue = ListeTaboue(taille_liste)
     if init:
         fn_init(pb, critere)
@@ -245,13 +264,58 @@ def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, cri
         tentative = time.time()
         if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
             f, temps = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, timeMax = 2, critere = 'max', init = False)
-            liste_taboue.vider()
+            liste_taboue = ListeTaboue(taille_liste)
         if pb.f>best_f:
             best_f = pb.f
             best_x = np.copy(pb.x)
             derniere_amelioration = time.time()
-        if tentative - derniere_amelioration >=timeMaxAmelio//2:
-            liste_taboue.taille_max = int(liste_taboue.taille_max*1.2)
+        elif tentative - derniere_amelioration >=timeMaxAmelio//2:
+            liste_taboue.etendre(int(liste_taboue.taille_max*1.5))
+        if tentative - derniere_amelioration >= timeMaxAmelio:
+            print("pas d'amélioration en ", timeMaxAmelio,"s.")
+            break
+    
+    resultat.put((best_f, best_x, val_initial))
+    return None
+
+def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
+                     init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+    """L'intensification est différente: si une solution est bonne on fait la recherche locale mais on poursuite ensuite
+    la recherche taboue avec la solution dont on était partie
+    Comme la précédente avec de la diversification:
+        Au bout de la moitié du temps limite sans amélioration, on augmente la taille de la liste taboue"""
+    liste_taboue = ListeTaboue(taille_liste)
+    if init:
+        fn_init(pb, critere)
+
+    best_f = pb.eval()
+    val_initial = pb.f
+    best_x = np.copy(pb.x)
+    pb.capacites_residuelles()
+    if not init_sol.est_complete(pb.x):
+        print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
+        pb.f = -1
+        resultat.put((-1, best_x, -1))
+        return None
+    derniere_amelioration = time.time()
+    while not stopMontee:
+        amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
+        tentative = time.time()
+        if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
+            x_courant = np.copy(pb.x)
+            f_courant = pb.f
+            f, temps = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, timeMax = 2, critere = 'max', init = False)
+            
+        if pb.f>best_f:
+            best_f = pb.f
+            best_x = np.copy(pb.x)
+            pb.x = x_courant
+            pb.f = f_courant
+            liste_taboue.reduire(taille_liste)
+            derniere_amelioration = time.time()
+        elif tentative - derniere_amelioration >=timeMaxAmelio//2:
+            liste_taboue.etendre(int(liste_taboue.taille_max*1.5))
+        if tentative - derniere_amelioration >= timeMaxAmelio:
             print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
     

@@ -137,7 +137,7 @@ def sol_gloutonne(Pb):
     
 def sol_gloutonne_2(Pb, critere = 'max'):
     # plus efficace que sol_gloutonne mais même principe.
-    # retourne la solution et si elle est valable (ie ttes les taches sont affectées)
+    # retourne la solution
     couples_tries = sort_affectations_crit(Pb, critere)
     assigned_tasks=0
     for couple in couples_tries:
@@ -236,13 +236,14 @@ def fam_sols(Pb, critere):
     solutions_famille = [sol_gloutonne_stoch_4(Pb,critere) for _ in range(N)]
     return solutions_famille
 
+if __name__=="__main__":
+    # permet de lancer le code qui suit que si le fichier est exécuté (et pas s'il est importé)
+    Pb1 =  Pb("instances/gapd.txt",0)
+    sol = sol_gloutonne(Pb1)
+    print(Pb1.evaluate(sol))
 
-Pb1 =  Pb("instances/gapd.txt",0)
-sol = sol_gloutonne(Pb1)
-print(Pb1.evaluate(sol))
-
-sols_fam = fam_sols(Pb1,critere='min')
-for i in range(40):
-    print(sols_fam[i])
-    print(Pb1.evaluate(sols_fam[i]))
-print(np.min([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
+    sols_fam = fam_sols(Pb1,critere='min')
+    for i in range(40):
+        print(sols_fam[i])
+        print(Pb1.evaluate(sols_fam[i]))
+    print(np.min([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
