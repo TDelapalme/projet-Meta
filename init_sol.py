@@ -22,6 +22,14 @@ class Pb:
         self.f = np.sum([self.c[self.x[t],t] for t in range(self.t)])
         return self.f
     
+    def evaluate(self,X):
+        f = 0
+        for tache in range(len(X)):
+            a = X[tache]
+            f += self.c[a,tache]
+        self.f = f
+        return f
+    
     def realisabilite_agent(self, agent, X):
         # Vérifie si un agent peut effectuer les tâches qui lui sont assignées
         capacite_restante = self.b[agent]
@@ -45,41 +53,6 @@ class Pb:
                 deficit_total += capacite_agent
         return deficit_total
 
-class Pb_genetique: # Même chose mais la solution n'est pas définie à l'interieur de la classe
-
-    def __init__(self, file, id) -> None:
-
-        self.file = file
-        self.id = id
-        self.r, self.c, self.b, self.m, self.t = readfiles.readfile(file,id)
-
-
-    def evaluate(self,X):
-        f = 0
-        for tache in range(len(X)):
-            a = X[tache]
-            f += self.c[a,tache]
-        self.f = f
-        return f
-
-    
-    def realisabilite_agent(self, agent, X):
-        # Vérifie si un agent peut effectuer les tâches qui lui sont assignées
-        capacite_restante = self.b[agent]
-        for tache in range(self.t):
-            if X[tache] == agent:
-                capacite_restante -= self.r[agent][tache]
-        return capacite_restante
-    
-        
-    def realisabilite(self,X):
-        # Calcule la faisabilité totale de la solution
-        deficit_total = 0
-        for agent in range(self.m):
-            capacite_agent = self.realisabilite_agent(agent, X)
-            if capacite_agent < 0:
-                deficit_total += capacite_agent
-        return deficit_total
 
 def sort_affectations_crit(Pb, critere = 'max'):
 
@@ -186,7 +159,7 @@ def fam_sols(Pb, critere):
 
 if __name__=="__main__":
     # permet de lancer le code qui suit que si le fichier est exécuté (et pas s'il est importé)
-    Pb1 =  Pb("instances/gapd.txt",0)
+    Pb1 =  Pb("instances/gapc.txt",0)
     sol = sol_gloutonne_2(Pb1,'min')
     print(Pb1.evaluate(sol))
 

@@ -1,5 +1,7 @@
 import init_sol
 import random
+import recherche_taboue as rt
+import voisinage as v
 
 def croisement(parent1,parent2):
 
@@ -37,7 +39,27 @@ def parent_selection(sols_fam, Pb, tsize=10): # Tournament
 
 def corr_sol(sol):
     # renvoie une version réalisable d'une solution non réalisable
+
     return sol
+
+def descente_pop(pop, Pb):
+    taille_liste = int(Pb.t/4)
+
+    fn_init = init_sol.sol_gloutonne_2
+    fn_un_pas = rt.montee_un_pas_tabou_swap
+    fn_rt = rt.recherche_taboue_int_div_2
+    fn_un_pas_ls = v.un_pas_swap
+    critere_tabou = rt.tabou_liste_1_swap
+    initialisation = False
+    critere = 'max'
+    aspiration = True
+    timeMax = 20
+    timeMaxAmelio = 5
+    for sol in pop:
+        Pb.x = sol
+        val, val_initiale, execTime, real = rt.recherche_taboue_int_timeMax(Pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste, init = initialisation,
+                                                                aspiration = aspiration, critere = critere,
+                                                                timeMax = timeMax, timeMaxAmelio=timeMaxAmelio)
 
 def new_pop(sols_fam, Pb):
     
