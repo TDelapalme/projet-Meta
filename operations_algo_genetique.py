@@ -43,8 +43,12 @@ def corr_sol(sol):
     return sol
 
 def descente_pop(pop, Pb):
-    taille_liste = int(Pb.t/4)
 
+    # nouvelle pop améliorée
+    new_pop = [[]] * len(pop)
+
+    # param recherche tabou
+    taille_liste = int(Pb.t/4)
     fn_init = init_sol.sol_gloutonne_2
     fn_un_pas = rt.montee_un_pas_tabou_swap
     fn_rt = rt.recherche_taboue_int_div_2
@@ -53,13 +57,21 @@ def descente_pop(pop, Pb):
     initialisation = False
     critere = 'max'
     aspiration = True
-    timeMax = 20
-    timeMaxAmelio = 5
-    for sol in pop:
-        Pb.x = sol
-        val, val_initiale, execTime, real = rt.recherche_taboue_int_timeMax(Pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste, init = initialisation,
+    timeMax = 10
+    timeMaxAmelio = 2
+
+
+    for i in range(len(pop)):
+        Pb.x = pop[i]
+        print(f'obj sol initiale : {Pb.eval()}')
+        best_f, best_x, _, _ = rt.recherche_taboue_int_timeMax(Pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste, init = initialisation,
                                                                 aspiration = aspiration, critere = critere,
                                                                 timeMax = timeMax, timeMaxAmelio=timeMaxAmelio)
+        new_pop[i] = best_x
+        print(f'obj sol finale : {best_f}')
+
+    return new_pop
+
 
 def new_pop(sols_fam, Pb):
     
