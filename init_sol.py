@@ -207,8 +207,8 @@ def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
     agent_values = [affectations[0][0] for affectations in sorted_affectations if affectations[0][1]==task]
 
     for a in agent_values:
-        # On essaye une solution avec un peu d'aléatoire
-        if (Pb.realisabilite_agent(a, sol) - Pb.r[a][task] >= 0) and (0.8 > random.random()):
+        # On essaye une affectation
+        if (Pb.realisabilite_agent(a, sol) - Pb.r[a][task] >= 0):
             sol[task] = a
 
             #print(f"Branchement : {task}={a}")
@@ -225,7 +225,16 @@ def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
     return None
 
 def sol_gloutonne_stoch_4(Pb, critere = 'max'):
+
+    # On bruite legerement la liste trié pour obtenir des solutions différentes à chaque appel
+    alpha = 0.8
     sorted_affectations = sort_affectations_crit(Pb, critere)
+    for i in range(len(sorted_affectations)-1):
+        if random.random()>alpha:
+            b = sorted_affectations[i]
+            sorted_affectations[i] = sorted_affectations[i+1]
+            sorted_affectations[i+1] = b
+
     t = Pb.t
     sol = [-1] * t
     return sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations)
@@ -239,7 +248,7 @@ def fam_sols(Pb, critere):
 if __name__=="__main__":
     # permet de lancer le code qui suit que si le fichier est exécuté (et pas s'il est importé)
     Pb1 =  Pb("instances/gapd.txt",0)
-    sol = sol_gloutonne(Pb1)
+    sol = sol_gloutonne_2(Pb1,'min')
     print(Pb1.evaluate(sol))
 
     sols_fam = fam_sols(Pb1,critere='min')
