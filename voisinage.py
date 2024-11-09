@@ -118,22 +118,23 @@ def descente_reaffectation_un_pas(pb):
         return True
     
     
-def montee_iterMax(pb, fn_initialisation, fn_montee_un_pas, iterMax = 100):
-    print("initialisation..")
-    fn_initialisation(pb)
-    print(pb.x)
+def montee_iterMax(pb, fn_initialisation, fn_un_pas, critere = 'max', iterMax = 100, init = True):
+    if init:
+        fn_initialisation(pb, critere)
+
     val_initiale = pb.eval()
     pb.capacites_residuelles()
     if not init_sol.est_complete(pb.x):
-        print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
+        # print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
+        pb.f = -1
         return None
     for i in range(iterMax):
-        opt_local = fn_montee_un_pas(pb)
+        opt_local = fn_un_pas(pb, critere)
         if opt_local:
-            return pb.f, val_initiale, pb.x, i
+            return pb.f
     
-    print("optimum local pas trouvé.")
-    return pb.f, val_initiale, pb.x, i
+    # print("optimum local pas trouvé.")
+    return pb.f
 
 def un_pas_swap(pb, critere = 'max'):
     if critere == 'max':

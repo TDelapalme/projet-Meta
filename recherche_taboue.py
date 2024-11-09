@@ -191,7 +191,7 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
         resultat.put((-1, best_x, -1))
         return None
     derniere_amelioration = time.time()
-    while not stopMontee:
+    while not stopRecherche:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         if amelioree:
@@ -224,7 +224,7 @@ def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas
         resultat.put((-1, best_x, -1))
         return None
     derniere_amelioration = time.time()
-    while not stopMontee:
+    while not stopRecherche:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
@@ -259,11 +259,11 @@ def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, cri
         resultat.put((-1, best_x, -1))
         return None
     derniere_amelioration = time.time()
-    while not stopMontee:
+    while not stopRecherche:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
-            f, temps = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, timeMax = 2, critere = 'max', init = False)
+            f = v.montee_iterMax(pb, fn_init, fn_un_pas_ls, critere = 'max', init = False, iterMax=200)
             liste_taboue = ListeTaboue(taille_liste)
         if pb.f>best_f:
             best_f = pb.f
@@ -298,13 +298,13 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
         resultat.put((-1, best_x, -1))
         return None
     derniere_amelioration = time.time()
-    while not stopMontee:
+    while not stopRecherche:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
             x_courant = np.copy(pb.x)
             f_courant = pb.f
-            f, temps = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, timeMax = 2, critere = 'max', init = False)
+            f = v.montee_iterMax(pb, fn_init, fn_un_pas_ls, critere = 'max', init = False, iterMax=200)
             
         if pb.f>best_f:
             best_f = pb.f
@@ -324,8 +324,8 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
 
 def recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, critere_tabou, taille_liste,
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
-    global stopMontee
-    stopMontee = False
+    global stopRecherche
+    stopRecherche = False
     resultat = queue.Queue()
     start = time.time()
     thread = Thread(target=fn_rt, args = [pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
@@ -337,15 +337,15 @@ def recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, critere_tabou, taill
     thread.join(timeMax)
 
     # Set off your flag switch to indicate that the thread should stop
-    stopMontee = True
+    stopRecherche = True
     end = time.time()
     best_f, best_x, val_initiale = resultat.get()
     return best_f, val_initiale, end-start, pb.realisabilite(best_x)==0
 
 def recherche_taboue_int_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
-    global stopMontee
-    stopMontee = False
+    global stopRecherche
+    stopRecherche = False
     resultat = queue.Queue()
     start = time.time()
     thread = Thread(target=fn_rt, args = [pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
@@ -357,7 +357,7 @@ def recherche_taboue_int_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, cr
     thread.join(timeMax)
 
     # Set off your flag switch to indicate that the thread should stop
-    stopMontee = True
+    stopRecherche = True
     end = time.time()
     best_f, best_x, val_initiale = resultat.get()
     return best_f, val_initiale, end-start, pb.realisabilite(best_x)==0
