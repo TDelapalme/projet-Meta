@@ -197,7 +197,7 @@ def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
     # Si toutes les variables sont assignées, retourner la solution
 
     if est_complete(sol):
-        print(sol)
+        # print(sol)
         return sol
 
     unassigned_tasks = [i for i in range(Pb.t) if sol[i]==-1]
