@@ -109,9 +109,15 @@ def sort_affectations_crit(Pb, critere = 'max'):
     for i in range(Pb.m):
         for j in range(Pb.t):
             rentabilite = Pb.c[i][j] / Pb.r[i][j]
-            couples.append(((i, j), rentabilite))
-    # Tri des couples en fonction de la rentabilité décroissante
-    couples_tries = sorted(couples, key=lambda x: x[1], reverse=(critere=='max'))
+            cr = Pb.c[i][j] * Pb.r[i][j]
+            couples.append(((i, j), rentabilite, cr))
+    # Si on cherche un max : Tri des couples en fonction de la rentabilité décroissante
+    if critere == 'max':
+        couples_tries = sorted(couples, key=lambda x: x[1], reverse=True)
+    # Si on cherche un min : Tri des couples en fonction de r*c croissant 
+    else :
+        couples_tries = sorted(couples, key=lambda x: x[2], reverse=False)
+
     return couples_tries  
 
 def sol_gloutonne(Pb):
@@ -181,19 +187,62 @@ def sol_gloutonne_stoch(Pb):
     return sol
 
 
-def fam_sols(Pb):
+def est_complete(X):
+    # Vérifie si toutes les tâches sont affectées
+    return all(x != -1 for x in X)
+
+def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
+
+    #print(f"Solution courante : {sol}")
+    # Si toutes les variables sont assignées, retourner la solution
+
+    if est_complete(sol):
+        print(sol)
+        return sol
+
+    unassigned_tasks = [i for i in range(Pb.t) if sol[i]==-1]
+
+    task = np.random.choice(unassigned_tasks)
+
+    agent_values = [affectations[0][0] for affectations in sorted_affectations if affectations[0][1]==task]
+
+    for a in agent_values:
+        # On essaye une solution avec un peu d'aléatoire
+        if (Pb.realisabilite_agent(a, sol) - Pb.r[a][task] >= 0) and (0.8 > random.random()):
+            sol[task] = a
+
+            #print(f"Branchement : {task}={a}")
+
+            # Recursive backtracking with changes tracked
+            result = sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations)
+            
+            if result:  # Si une solution est trouvée, la retourner
+                return result
+
+            #print('Echec backtrack')
+            sol[task] = -1
+    #print(f"Pas de valeur consitante pour {task}")
+    return None
+
+def sol_gloutonne_stoch_4(Pb, critere = 'max'):
+    sorted_affectations = sort_affectations_crit(Pb, critere)
+    t = Pb.t
+    sol = [-1] * t
+    return sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations)
+
+def fam_sols(Pb, critere):
     N=40
     N = 40
-    solutions_famille = [sol_gloutonne_stoch(Pb) for _ in range(N)]
+    solutions_famille = [sol_gloutonne_stoch_4(Pb,critere) for _ in range(N)]
     return solutions_famille
 
 
-# Pb1 =  Pb("instances/gapa1.txt",0)
-# sol = sol_gloutonne(Pb1)
-# print(Pb1.evaluate(sol))
+Pb1 =  Pb("instances/gapd.txt",0)
+sol = sol_gloutonne(Pb1)
+print(Pb1.evaluate(sol))
 
-# sols_fam = fam_sols(Pb1)
-# for i in range(40):
-#     print(Pb1.evaluate(sols_fam[i]))
-# print(np.max([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
-
+sols_fam = fam_sols(Pb1,critere='min')
+for i in range(40):
+    print(sols_fam[i])
+    print(Pb1.evaluate(sols_fam[i]))
+print(np.min([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
