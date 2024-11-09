@@ -340,7 +340,7 @@ def recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, critere_tabou, taill
     stopRecherche = True
     end = time.time()
     best_f, best_x, val_initiale = resultat.get()
-    return best_f, val_initiale, end-start, pb.realisabilite(best_x)==0
+    return best_f, best_x, end-start, pb.realisabilite(best_x)==0
 
 def recherche_taboue_int_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
@@ -360,4 +360,4 @@ def recherche_taboue_int_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, cr
     stopRecherche = True
     end = time.time()
     best_f, best_x, val_initiale = resultat.get()
-    return best_f, val_initiale, end-start, pb.realisabilite(best_x)==0
+    return best_f, best_x, end-start, pb.realisabilite(best_x)==0
