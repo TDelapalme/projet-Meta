@@ -1,6 +1,9 @@
 import readfiles
 import random
 import numpy as np
+from concurrent.futures import ProcessPoolExecutor
+import copy
+
 
 # Param
 alpha = 0.4
@@ -135,6 +138,8 @@ def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
             sol[task] = -1
     #print(f"Pas de valeur consitante pour {task}")
     return None
+     
+
 
 def sol_gloutonne_stoch_4(Pb, critere = 'max'):
 
@@ -162,7 +167,10 @@ def sol_gloutonne_stoch_c(Pb, critere = "max"):
         return True
     
 def fam_sols(Pb, critere, N):
-    solutions_famille = [sol_gloutonne_stoch_4(Pb,critere) for _ in range(N)]
+    with ProcessPoolExecutor() as executor:
+        futures = [executor.submit(sol_gloutonne_stoch_4, Pb, critere) for _ in range(N)]
+        solutions_famille = [future.result() for future in futures]
+        
     return solutions_famille
 
 if __name__=="__main__":
