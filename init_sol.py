@@ -151,8 +151,18 @@ def sol_gloutonne_stoch_4(Pb, critere = 'max'):
     sol = [-1] * t
     return sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations)
 
+def sol_gloutonne_stoch_c(Pb, critere = "max"):
+    sol = sol_gloutonne_stoch_4(Pb, critere)
+    if type(sol)==type(None):
+        Pb.f = -1
+        return False
+    else:
+        Pb.x = sol
+        return True
+    
 def fam_sols(Pb, critere):
-    N = 20
+    N=40
+    N = 40
     solutions_famille = [sol_gloutonne_stoch_4(Pb,critere) for _ in range(N)]
     return solutions_famille
 
