@@ -2,13 +2,15 @@ import init_sol
 import random
 import recherche_taboue as rt
 import voisinage as v
+import copy
 
 def croisement(parent1,parent2):
 
     t = len(parent1)
     masque = [random.randint(0, 1) for _ in range(t)]
     enfant1, enfant2 = [-1] * t, [-1] * t
-
+ 
+    #print('Avant croisement : ', init_sol.est_complete(parent1),init_sol.est_complete(parent2))   
     for i in range(t):
         if masque[i]==0:
             enfant1[i] = parent1[i]
@@ -16,7 +18,7 @@ def croisement(parent1,parent2):
         else:
             enfant1[i] = parent2[i]
             enfant2[i] = parent1[i]
-
+    #print('Après croisement : ', init_sol.est_complete(enfant1),init_sol.est_complete(enfant2))
     return(enfant1,enfant2)
 
 def mutation(sol,Pb,alpha):
@@ -53,24 +55,34 @@ def descente_pop(pop, Pb,critere='max'):
     # param recherche tabou
     taille_liste = int(Pb.t/4)
     fn_init = init_sol.sol_gloutonne_2
-    fn_un_pas = rt.montee_un_pas_tabou_swap
-    fn_rt = rt.recherche_taboue_int_div_2
-    fn_un_pas_ls = v.un_pas_swap
-    critere_tabou = rt.tabou_liste_1_swap
+    fn_rt = rt.recherche_taboue
+    critere_tabou = rt.tabou_liste_tache_reaffectation
     initialisation = False
-    critere = 'max'
     aspiration = True
     timeMax = 2
     timeMaxAmelio = 0.1
+
+    if critere == 'max':
+        fn_un_pas = rt.montee_un_pas_tabou_reaffect_nvl_agent
+        fn_un_pas_ls = v.un_pas_reaffectation
+
+    else :
+        fn_un_pas = rt.descente_un_pas_tabou_reaffect_nvl_agent
+        fn_un_pas_ls = v.un_pas_reaffectation
+        
 
 
     for i in range(len(pop)):
         Pb.x = pop[i]
         #print(f'obj sol initiale : {Pb.eval()}')
-        best_f, best_x, _, _ = rt.recherche_taboue_int_timeMax(Pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste, init = initialisation,
-                                                                aspiration = aspiration, critere = critere,
-                                                                timeMax = timeMax, timeMaxAmelio=timeMaxAmelio)
+        #print(Pb.x)
+        #print('Avant descente : ',init_sol.est_complete(Pb.x))
+
+        best_f, best_x, _, _ = rt.recherche_taboue_timeMax(Pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls,critere_tabou, taille_liste, init = initialisation,
+                                                                 aspiration = aspiration, critere = critere, timeMax = timeMax,
+                                                                 timeMaxAmelio=timeMaxAmelio)
         new_pop[i] = best_x
+        #print('Apres descente : ',init_sol.est_complete(best_x))
         #print(f'obj sol finale : {best_f}')
 
     return new_pop
@@ -78,7 +90,8 @@ def descente_pop(pop, Pb,critere='max'):
 def new_pop(sols_fam, Pb, critere='max'):
     
     N = len(sols_fam)
-    children = [[-1]*Pb.t]*N
+    children = [[-1 for _ in range(Pb.t)] for _ in range(N)]
+
     for i in range(N//2):
         p1,p2 = parent_selection(sols_fam, Pb,critere)
         child1, child2 = croisement(p1,p2)
@@ -89,38 +102,94 @@ def new_pop(sols_fam, Pb, critere='max'):
     sorted_children = sorted(children, key=lambda x : Pb.evaluate(x), reverse=(critere=='max'))
 
     pop = sorted_parents[:10] + sorted_children[10:]
-
+    
     return pop
 
 def best_element(pop, Pb, critere):
-    sol_opt = pop[0]
-    opt = Pb.evaluate(sol_opt)
+    sol_opt = None
+    opt = None
+    bol = True
     for sol in pop:
-        if Pb.evaluate(sol)>opt and critere=='max':
-            opt=Pb.evaluate(sol)
-            sol_opt = sol
-        if Pb.evaluate(sol)<opt and critere=='min':
-            opt=Pb.evaluate(sol)
-            sol_opt = sol
+        #if not init_sol.est_complete(sol):
+        #    print('sol non complète')
+        #    bol = False
+        if opt == None:
+            if Pb.realisabilite(sol)==0:
+                opt=Pb.evaluate(sol)
+                sol_opt = sol
+        else:
+            if Pb.evaluate(sol)>opt and critere=='max' and Pb.realisabilite(sol)==0:
+                opt=Pb.evaluate(sol)
+                sol_opt = sol
+            if Pb.evaluate(sol)<opt and critere=='min' and Pb.realisabilite(sol)==0:
+                opt=Pb.evaluate(sol)
+                sol_opt = sol
+    #if bol:
+    #    print('Toutes les solutions sont complètes')
     return sol_opt,opt
         
 
 
-def evolution(Pb,critere= 'max'):
+def evolution(Pb, N_init, N_gen_max, critere= 'max'):
 
-    pop = descente_pop(init_sol.fam_sols(Pb,critere),Pb)
-    best = best_element(pop,Pb,critere)
-    N = 10 # nb de générations
+    #print('init...')
+    pop_init = init_sol.fam_sols(Pb,critere,N_init)
+    #print('Selection du meilleur individu...')
+    Best = best_element(pop_init,Pb,critere)
+    #print('Meileure solution de départ : ',Best[0],Best[1])
 
-    for i in range(N):
-        children = new_pop(pop,Pb,critere)
-        children_ameliores = descente_pop(children,Pb,critere)
-        best_child = best_element(children_ameliores,Pb,critere)
-        #print(best_child[1])
-        if best_child[1]>best[1]:
-            best = best_child
+    #print('init 1', init_sol.est_complete(best[0]),best[0])
+    #print('1ere Descente...')
+    pop = descente_pop(pop_init,Pb)
+    max_stagnation = 3
+    i_stagnation = 0
+    i = 0
     
-    return best
+    #print('init 2', init_sol.est_complete(best[0]),best[0])
+    while i<N_gen_max and i_stagnation<max_stagnation:
+        #print(f'Gen {i} :')
+        #print(i,'Nouvelle pop ...')
+        #print(Best)
+        children = new_pop(pop,Pb,critere)
+        #print(Best)
+        #print(i,'Descente nouvelle pop ...')
+        pop = descente_pop(children,Pb,critere)
+        #print(Best)
+        #print(i,'Selection du meilleur individu...')
+        best_child = best_element(pop,Pb,critere)
+        #print(Best)
+        #print(i,'Meileure solution nouvelle pop : ',best_child[0],best_child[1])
+        #print('best child : ',best_child[0], best_child[1])
+        #print(Best)
+        if best_child[1] :
+            #print(Best)
+            if best_child[1]>Best[1]:
+                #print(Best)
+                Best = copy.deepcopy(best_child)
+                #print(Best)
+                #print(i,'New best')
+                i_stagnation=0
+                #print(Best)
+                #print(f'while it {i}, new best',init_sol.est_complete(best[0]), best[0])
+            else:
+                i_stagnation+=1
+                #print(i,'Stagnation : ', i_stagnation)
+                #print(f'while it {i}, not new best',init_sol.est_complete(best[0]),best[0])
+        else:
+            i_stagnation+=1
+            #print(i,'Stagnation : ', i_stagnation)
+
+        #print('Best : ',Best[0])
+        i+=1
+    if i_stagnation == max_stagnation:
+        print('Stagnation de la meilleure solution.')
+    else:
+        print('Maximun de générations atteint')
+
+    #print('End 1',init_sol.est_complete(best[0]))
+    print('Meilleure solution sur l evolution : ',Best[0],Best[1])
+    #print('End 2',init_sol.est_complete(best[0]))
+    return Best
 
 
 

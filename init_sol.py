@@ -161,9 +161,7 @@ def sol_gloutonne_stoch_c(Pb, critere = "max"):
         Pb.eval()
         return True
     
-def fam_sols(Pb, critere):
-    N=40
-    N = 40
+def fam_sols(Pb, critere, N):
     solutions_famille = [sol_gloutonne_stoch_4(Pb,critere) for _ in range(N)]
     return solutions_famille
 
@@ -172,9 +170,9 @@ if __name__=="__main__":
     Pb1 =  Pb("instances/gapc.txt",0)
     sol = sol_gloutonne_2(Pb1,'min')
     print(Pb1.evaluate(sol))
-
-    sols_fam = fam_sols(Pb1,critere='min')
-    for i in range(40):
+    N = 20
+    sols_fam = fam_sols(Pb1,'min',N)
+    for i in range(N):
         print(sols_fam[i])
         print(Pb1.evaluate(sols_fam[i]))
-    print(np.min([Pb1.evaluate(sols_fam[i]) for i in range(40)]))
+    print(np.min([Pb1.evaluate(sols_fam[i]) for i in range(N)]))
