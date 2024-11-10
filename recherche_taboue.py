@@ -130,10 +130,11 @@ def montee_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_tabo
                 if aspiration and pb.f + delta_f > best_f:
                     delta_f_max = delta_f
                     best_reaffect = (j,t)
-                elif critere_tabou(liste_taboue, (j,t)):
+                elif not critere_tabou(liste_taboue, (j,t)):
+                    print("critere taboue non")
                     delta_f_max = delta_f
                     best_reaffect = (j,t)
-
+    print(best_reaffect)
     ancien_agent = v.reaffectation_1tache(pb, delta_f_max, best_reaffect[0],best_reaffect[1])
     liste_taboue.ajouter(best_reaffect[1])
     return pb.f > best_f
@@ -223,7 +224,7 @@ def descente_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_ta
                 if aspiration and pb.f + delta_f < best_f:
                     delta_f_min = delta_f
                     best_reaffect = (j,t)
-                elif critere_tabou(liste_taboue, (j,t)):
+                elif not critere_tabou(liste_taboue, (j,t)):
                     delta_f_min = delta_f
                     best_reaffect = (j,t)
 
@@ -403,6 +404,8 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
     best_f = pb.eval()
     val_initial = pb.f
     best_x = np.copy(pb.x)
+    x_courant = np.copy(pb.x)
+    f_courant = pb.f
     pb.capacites_residuelles()
     if not init_sol.est_complete(pb.x):
         print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
@@ -414,6 +417,7 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
     s = time.time()
     t=s
     while t-s <= t_max:
+        print(best_f)
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         
