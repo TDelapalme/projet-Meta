@@ -18,7 +18,8 @@ class ListeTaboue:
 
     def ajouter(self, element):
         # on remplace le dernier element de la file par le nouveau
-        self.liste[self.indice_fin] = element
+        self.liste[self.indice_fin][0] = element[0]
+        self.liste[self.indice_fin][1] = element[1]
         # on change la fin
         self.indice_fin += 1
         # si la fin de la file est en bout de tableau, on la ramène au début
@@ -35,7 +36,8 @@ class ListeTaboue:
         copie = np.copy(self.liste)
         self.liste = -np.ones((taille_max, 2))
         for i in range(1,taille_max+1):
-            self.liste[-i] = copie[(self.indice_fin-i)%taille_max]
+            self.liste[-i][0] = copie[(self.indice_fin-i)%taille_max][0]
+            self.liste[-i][1] = copie[(self.indice_fin-i)%taille_max][1]
         self.indice_fin = 0
         self.taille_max = taille_max
             
@@ -43,7 +45,8 @@ class ListeTaboue:
         copie = np.copy(self.liste)
         self.liste = -np.ones((taille_max, 2))
         for i in range(self.taille_max):
-            self.liste[i] = copie[(i+self.indice_fin)%self.taille_max]
+            self.liste[i][0] = copie[(i+self.indice_fin)%self.taille_max][0]
+            self.liste[i][1] = copie[(i+self.indice_fin)%self.taille_max][1]
         self.indice_fin = self.taille_max
         self.taille_max = taille_max
 
@@ -109,7 +112,7 @@ def montee_un_pas_tabou_reaffect_ancien_agent(pb, best_f, critere_tabou, liste_t
                     best_reaffect = (j,t)
 
     ancien_agent = v.reaffectation_1tache(pb, delta_f_max, best_reaffect[0],best_reaffect[1])
-    liste_taboue.ajouter(ancien_agent, best_reaffect[1])
+    liste_taboue.ajouter((ancien_agent, best_reaffect[1]))
     if pb.f > best_f:
         return True
     return False
@@ -120,8 +123,7 @@ def montee_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_tabo
         La fonction prend le meilleur voisin qui n'est pas dans la liste taboue, effectue la réaffection et l'ajoute dans la liste.
         Les couples de la liste taboue sont les nouvelles affectations qui ont été faites.
         La variable aspiration indique s'il y a le critère d'aspiration."""
-    
-    delta_f_max = -np.max(pb.c)
+    delta_f_max = -100000
     best_reaffect = (-1,-1)
     for t in range(pb.t):
         for j in range(pb.m):
@@ -131,12 +133,14 @@ def montee_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_tabo
                     delta_f_max = delta_f
                     best_reaffect = (j,t)
                 elif not critere_tabou(liste_taboue, (j,t)):
-                    print("critere taboue non")
+                    # print("critere taboue non")
                     delta_f_max = delta_f
                     best_reaffect = (j,t)
-    print(best_reaffect)
+ 
     ancien_agent = v.reaffectation_1tache(pb, delta_f_max, best_reaffect[0],best_reaffect[1])
-    liste_taboue.ajouter(best_reaffect[1])
+    liste_taboue.ajouter(best_reaffect)
+    # print(liste_taboue.liste)
+
     return pb.f > best_f
 
 
@@ -203,7 +207,7 @@ def descente_un_pas_tabou_reaffect_ancien_agent(pb, best_f, critere_tabou, liste
                     best_reaffect = (j,t)
 
     ancien_agent = v.reaffectation_1tache(pb, delta_f_min, best_reaffect[0],best_reaffect[1])
-    liste_taboue.ajouter(ancien_agent, best_reaffect[1])
+    liste_taboue.ajouter((ancien_agent, best_reaffect[1]))
     if pb.f < best_f:
         return True
     return False
@@ -215,7 +219,7 @@ def descente_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_ta
         Les couples de la liste taboue sont les nouvelles affectations qui ont été faites.
         La variable aspiration indique s'il y a le critère d'aspiration."""
     
-    delta_f_min = np.max(pb.c)
+    delta_f_min = 100000
     best_reaffect = (-1,-1)
     for t in range(pb.t):
         for j in range(pb.m):
@@ -229,7 +233,7 @@ def descente_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_ta
                     best_reaffect = (j,t)
 
     ancien_agent = v.reaffectation_1tache(pb, delta_f_min, best_reaffect[0],best_reaffect[1])
-    liste_taboue.ajouter(best_reaffect[1])
+    liste_taboue.ajouter(best_reaffect)
     return pb.f < best_f
 
 
@@ -292,6 +296,7 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
     s = time.time()
     t=s
     while t-s <= t_max:
+    #for i in range(40):
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         if amelioree:
@@ -351,7 +356,7 @@ def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas
     resultat.put((best_f, best_x, val_initial))
     return None
 
-def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
+def recherche_taboue_div(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
                      init = True, aspiration = True, critere = 'max',t_max = 300, timeMaxAmelio = 10):
     """Comme la précédente avec de la diversification:
         Au bout de la moitié du temps limite sans amélioration, on augmente la taille de la liste taboue"""
@@ -371,18 +376,19 @@ def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, cri
     derniere_amelioration = time.time()
     s = time.time()
     t=s
+    augmentation_liste = False
     while t-s <= t_max:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
-        if amelioree or abs(best_f - pb.f)/best_f <=0.05: # solution prometteuse
-            f = v.montee_iterMax(pb, fn_init, fn_un_pas_ls, critere = critere, init = False, iterMax=200)
-            liste_taboue = ListeTaboue(taille_liste)
-        if improved(best_f, pb.f, critere):
+        if amelioree:
             best_f = pb.f
             best_x = np.copy(pb.x)
+            liste_taboue.reduire(taille_liste)
+            augmentation_liste = False
             derniere_amelioration = time.time()
-        elif tentative - derniere_amelioration >=timeMaxAmelio//2:
-            liste_taboue.etendre(int(liste_taboue.taille_max*1.5))
+        elif not augmentation_liste and tentative - derniere_amelioration >=timeMaxAmelio//2:
+            liste_taboue.etendre(int(liste_taboue.taille_max*2))
+            augmentation_liste = True
         if tentative - derniere_amelioration >= timeMaxAmelio:
             #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
@@ -417,25 +423,20 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
     s = time.time()
     t=s
     while t-s <= t_max:
-        print(best_f)
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         
-        if amelioree or abs(best_f - pb.f)/best_f <=0.05: # solution prometteuse
-            x_courant = np.copy(pb.x)
-            f_courant = pb.f
-            f = v.montee_iterMax(pb, fn_init, fn_un_pas_ls, critere = critere, init = False, iterMax=200)
+        if amelioree or abs(best_f - pb.f)/best_f <=0.01: # solution prometteuse
+            f = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, critere = critere, init = False, timeMax=timeMaxAmelio/10)
             
         if improved(best_f, pb.f, critere):
             best_f = pb.f
             best_x = np.copy(pb.x)
-            pb.x = x_courant
-            pb.f = f_courant
             liste_taboue.reduire(taille_liste)
             augmentation_liste = False
             derniere_amelioration = time.time()
         elif not augmentation_liste and tentative - derniere_amelioration >=timeMaxAmelio//2:
-            liste_taboue.etendre(int(liste_taboue.taille_max*1.5))
+            liste_taboue.etendre(int(liste_taboue.taille_max*2))
             augmentation_liste = True
         if tentative - derniere_amelioration >= timeMaxAmelio:
             #print("pas d'amélioration en ", timeMaxAmelio,"s.")

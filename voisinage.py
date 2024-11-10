@@ -175,7 +175,7 @@ def montee_timeMax(pb, fn_initialisation, fn_un_pas, timeMax = 300, critere = 'm
 
     start = time.time()
 
-    montee(pb, fn_initialisation, fn_un_pas, init, critere)
+    montee(pb, fn_initialisation, fn_un_pas, init, critere, t_max=timeMax)
 
     end = time.time()
     return pb.f, end-start
