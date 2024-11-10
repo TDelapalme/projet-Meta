@@ -83,8 +83,9 @@ def tabou_liste_2_swap(liste, element):
     t1,t2 = element
     return (t1 in liste.liste) and (t2 in liste.liste)
 
-#----------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------
 # Fonctions de montée d'un pas pour la réaffectation
+#------------------------------------------------------------------------------------------------------------
 
 
 def montee_un_pas_tabou_reaffect_ancien_agent(pb, best_f, critere_tabou, liste_taboue, aspiration = True):
@@ -138,8 +139,10 @@ def montee_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_tabo
     return pb.f > best_f
 
 
-#----------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------
 # Fonctions de montée d'un pas pour le swap
+#------------------------------------------------------------------------------------------------------------
+
 
 def montee_un_pas_tabou_swap(pb, best_f, critere_tabou, liste_taboue, aspiration = True):
     """ une étape de recherche taboue. On retourne True si on a amélioré la meilleur valeur best_f rencontrée jusqu'à présent
@@ -171,9 +174,103 @@ def montee_un_pas_tabou_swap(pb, best_f, critere_tabou, liste_taboue, aspiration
         return pb.f > best_f
     else:
         return False
+    
+
+#------------------------------------------------------------------------------------------------------------
+# Fonctions de descente d'un pas pour la réaffectation
+#------------------------------------------------------------------------------------------------------------
+
+
+def descente_un_pas_tabou_reaffect_ancien_agent(pb, best_f, critere_tabou, liste_taboue, aspiration = True):
+    """ une étape de recherche taboue. On retourne True si on a amélioré la meilleur valeur best_f rencontrée jusqu'à présent
+        et False sinon.
+        La fonction prend le meilleur voisin qui n'est pas dans la liste taboue, effectue la réaffection et l'ajoute dans la liste.
+        Les couples de la liste taboue sont les affectations qui ont été rompues..
+        La variable aspiration indique s'il y a le critère d'aspiration."""
+    
+    delta_f_min = np.max(pb.c)
+    best_reaffect = (-1,-1)
+    for t in range(pb.t):
+        for j in range(pb.m):
+            real, delta_f = v.cout_reaffectation_1tache(pb, j,t)
+            if real and delta_f < delta_f_min:
+                if aspiration and pb.f + delta_f < best_f:
+                    delta_f_min = delta_f
+                    best_reaffect = (j,t)
+                elif not critere_tabou(liste_taboue, (j,t)):
+                    delta_f_min = delta_f
+                    best_reaffect = (j,t)
+
+    ancien_agent = v.reaffectation_1tache(pb, delta_f_min, best_reaffect[0],best_reaffect[1])
+    liste_taboue.ajouter(ancien_agent, best_reaffect[1])
+    if pb.f < best_f:
+        return True
+    return False
+
+def descente_un_pas_tabou_reaffect_nvl_agent(pb, best_f, critere_tabou, liste_taboue, aspiration = True):
+    """ une étape de recherche taboue. On retourne True si on a amélioré la meilleur valeur best_f rencontrée jusqu'à présent
+        et False sinon.
+        La fonction prend le meilleur voisin qui n'est pas dans la liste taboue, effectue la réaffection et l'ajoute dans la liste.
+        Les couples de la liste taboue sont les nouvelles affectations qui ont été faites.
+        La variable aspiration indique s'il y a le critère d'aspiration."""
+    
+    delta_f_min = np.max(pb.c)
+    best_reaffect = (-1,-1)
+    for t in range(pb.t):
+        for j in range(pb.m):
+            real, delta_f = v.cout_reaffectation_1tache(pb, j,t)
+            if real and delta_f < delta_f_min:
+                if aspiration and pb.f + delta_f < best_f:
+                    delta_f_min = delta_f
+                    best_reaffect = (j,t)
+                elif critere_tabou(liste_taboue, (j,t)):
+                    delta_f_min = delta_f
+                    best_reaffect = (j,t)
+
+    ancien_agent = v.reaffectation_1tache(pb, delta_f_min, best_reaffect[0],best_reaffect[1])
+    liste_taboue.ajouter(best_reaffect[1])
+    return pb.f < best_f
+
+
+#----------------------------------------------------------------------
+# Fonctions de montée d'un pas pour le swap
+
+def montee_un_pas_tabou_swap(pb, best_f, critere_tabou, liste_taboue, aspiration = True):
+    """ une étape de recherche taboue. On retourne True si on a amélioré la meilleur valeur best_f rencontrée jusqu'à présent
+        et False sinon.
+        La fonction prend le meilleur voisin qui n'est pas dans la liste taboue, effectue la réaffection et l'ajoute dans la liste.
+        Les couples de la liste taboue sont les affectations qui ont été rompues..
+        La variable aspiration indique s'il y a le critère d'aspiration."""
+    
+    delta_f_min = 10000
+    mod = False
+    best_swap = (-1,-1)
+    for t1 in range(pb.t):
+        for t2 in range(t1+1,pb.t):
+            real, delta_f = v.cout_swap_taches(pb, t1,t2)
+            if real and delta_f < delta_f_min and pb.x[t1]!=pb.x[t2]:
+
+                if aspiration and pb.f + delta_f < best_f:
+                    delta_f_min = delta_f
+                    best_swap = (t1,t2)
+                    mod = True
+                elif not critere_tabou(liste_taboue, (t1,t2)):
+                    delta_f_min = delta_f
+                    best_swap = (t1,t2)
+                    mod = True
+    # print(best_swap, delta_f_max, pb.x[best_swap[0]]==pb.x[best_swap[1]] )
+    if mod:
+        v.swap_taches(pb, delta_f_min, best_swap[0],best_swap[1])
+        liste_taboue.ajouter(best_swap)
+        return pb.f > best_f
+    else:
+        return False
+    
 # *******************************************************************************************************************************
 # Fonctions de recherche taboue
-    
+# *******************************************************************************************************************************
+
+
 def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
                      init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
     """recherche taboue initiale. On s'interrompt si la solution n'a pas été améliorée pendant timeMaxAmelio secondes."""
@@ -205,6 +302,12 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
     resultat.put((best_f, best_x, val_initial))
     return None
 
+def improved(best_f,f,critere):
+    if critere =='max':
+        return f>best_f
+    else:
+        return f<best_f
+
 def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                      init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
     """ recherche taboue initiale avec intensification.
@@ -227,10 +330,10 @@ def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas
     while not stopRecherche:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
-        if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
-            f, temps = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, timeMax = 2, critere = 'max', init = False)
+        if amelioree or abs(best_f - pb.f)/best_f <=0.05: # solution prometteuse
+            f, temps = v.montee_timeMax(pb, fn_init, fn_un_pas_ls, timeMax = 2, critere = critere, init = False)
             liste_taboue.vider()
-        if pb.f>best_f:
+        if improved(best_f, pb.f, critere):
             best_f = pb.f
             best_x = np.copy(pb.x)
             derniere_amelioration = time.time()
@@ -262,10 +365,10 @@ def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, cri
     while not stopRecherche:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
-        if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
-            f = v.montee_iterMax(pb, fn_init, fn_un_pas_ls, critere = 'max', init = False, iterMax=200)
+        if amelioree or abs(best_f - pb.f)/best_f <=0.05: # solution prometteuse
+            f = v.montee_iterMax(pb, fn_init, fn_un_pas_ls, critere = critere, init = False, iterMax=200)
             liste_taboue = ListeTaboue(taille_liste)
-        if pb.f>best_f:
+        if improved(best_f, pb.f, critere):
             best_f = pb.f
             best_x = np.copy(pb.x)
             derniere_amelioration = time.time()
@@ -303,12 +406,12 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         
-        if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
+        if amelioree or abs(best_f - pb.f)/best_f <=0.05: # solution prometteuse
             x_courant = np.copy(pb.x)
             f_courant = pb.f
-            f = v.montee_iterMax(pb, fn_init, fn_un_pas_ls, critere = 'max', init = False, iterMax=200)
+            f = v.montee_iterMax(pb, fn_init, fn_un_pas_ls, critere = critere, init = False, iterMax=200)
             
-        if pb.f>best_f:
+        if improved(best_f, pb.f, critere):
             best_f = pb.f
             best_x = np.copy(pb.x)
             pb.x = x_courant
@@ -326,7 +429,12 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
     resultat.put((best_f, best_x, val_initial))
     return None
 
-def recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, critere_tabou, taille_liste,
+# ***************************************************************************************************************
+# Fonctions a appeler
+# ***************************************************************************************************************
+
+# recherche taboue classique avec limite de temps.
+def recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
     global stopRecherche
     stopRecherche = False
@@ -346,6 +454,8 @@ def recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, critere_tabou, taill
     best_f, best_x, val_initiale = resultat.get()
     return best_f, best_x, end-start, pb.realisabilite(best_x)==0
 
+# recherche taboue avec fonction d'intensification = recherche locale. 
+# Limite de temps pour le global et limite d'itération hardcodée pour la recherche locale
 def recherche_taboue_int_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
     global stopRecherche
@@ -365,3 +475,28 @@ def recherche_taboue_int_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, cr
     end = time.time()
     best_f, best_x, val_initiale = resultat.get()
     return best_f, best_x, end-start, pb.realisabilite(best_x)==0
+
+# une des recherche taboue précédentes avec départ multiples. Limite de temps
+# A utiliser avec une fonction d'initialisation aléatoire
+def recherche_taboue_depart_mult(pb, fn_rt_gbl, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
+                                 init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 12, nb_depart = 10):
+    s = time.time()
+    valeurs = []
+    solutions = []
+    for dep in range(nb_depart):
+        best_f, best_x,_, real = fn_rt_gbl(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
+                                           init, aspiration, critere, timeMax = timeMax/nb_depart, timeMaxAmelio = timeMaxAmelio)
+        if real:
+            valeurs.append(best_f)
+            solutions.append(best_x)
+    valeurs = np.array(valeurs)
+    if critere == 'max':
+        best_val = np.max(valeurs)
+        index_best = np.argmax(valeurs)
+    else:
+        best_val = np.min(valeurs)
+        index_best = np.argmin(valeurs)
+    
+    best_sol = solutions[index_best]
+    e = time.time()
+    return best_val, best_sol, e-s
