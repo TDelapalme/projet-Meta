@@ -298,9 +298,11 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
         resultat.put((-1, best_x, -1))
         return None
     derniere_amelioration = time.time()
+    augmentation_liste = False
     while not stopRecherche:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
+        
         if (best_f - pb.f)/best_f <=0.05: # solution prometteuse
             x_courant = np.copy(pb.x)
             f_courant = pb.f
@@ -312,9 +314,11 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
             pb.x = x_courant
             pb.f = f_courant
             liste_taboue.reduire(taille_liste)
+            augmentation_liste = False
             derniere_amelioration = time.time()
-        elif tentative - derniere_amelioration >=timeMaxAmelio//2:
+        elif not augmentation_liste and tentative - derniere_amelioration >=timeMaxAmelio//2:
             liste_taboue.etendre(int(liste_taboue.taille_max*1.5))
+            augmentation_liste = True
         if tentative - derniere_amelioration >= timeMaxAmelio:
             #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
