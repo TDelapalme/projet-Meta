@@ -148,7 +148,7 @@ def un_pas_reaffectation(pb, critere = 'max'):
     else:
         return descente_reaffectation_un_pas(pb)
 
-def montee(pb, fn_initialisation, fn_un_pas, init, critere = 'max'):
+def montee(pb, fn_initialisation, fn_un_pas, init, critere = 'max', t_max = 300):
     # print("initialisation..")
     if init:
         fn_initialisation(pb, critere)
@@ -159,32 +159,51 @@ def montee(pb, fn_initialisation, fn_un_pas, init, critere = 'max'):
         print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
         pb.f = -1
         return None
-    iter = 0
-    while not stopMontee:
+    s = time.time()
+    t=s
+    while t-s <= t_max:
         opt_local = fn_un_pas(pb, critere)
         if opt_local:
             # print("optimum local trouvé")
             return pb.f, val_initiale, pb.x, iter
-        iter +=1
-    
+        t = time.time()
+
     # print("optimum local pas trouvé.")
     return pb.f, val_initiale, pb.x, iter
 
 def montee_timeMax(pb, fn_initialisation, fn_un_pas, timeMax = 300, critere = 'max', init = True):
-    global stopMontee
-    stopMontee = False
+
     start = time.time()
-    thread = Thread(target=montee, args = [pb, fn_initialisation, fn_un_pas, init, critere])
-    # Start the thread
-    thread.start()
 
-    # Join your thread with the execution time you want
-    thread.join(timeMax)
+    montee(pb, fn_initialisation, fn_un_pas, init, critere)
 
-    # Set off your flag switch to indicate that the thread should stop
-    stopMontee = True
     end = time.time()
     return pb.f, end-start
+
+def montee_depMult_timeMax(pb, fn_initialisation, fn_un_pas, timeMax = 300, critere = 'max', init = True, nb_depart = 5):
+
+    start = time.time()
+    valeurs = []
+    solutions = []
+    for _ in range(nb_depart):
+        real = fn_initialisation(pb, critere)
+        if real:
+            montee(pb, fn_initialisation, fn_un_pas, init, critere, timeMax/nb_depart)
+            valeurs.append(pb.f)
+            solutions.append(pb.x)
+    
+    valeurs = np.array(valeurs)
+    if critere == 'max':
+        best_val = np.max(valeurs)
+        index_best = np.argmax(valeurs)
+    else:
+        best_val = np.min(valeurs)
+        index_best = np.argmin(valeurs)
+    
+    best_sol = solutions[index_best]
+    real = pb.realisabilite(best_sol)==0
+    end = time.time()
+    return best_val, best_sol, end-start
 
 
 
