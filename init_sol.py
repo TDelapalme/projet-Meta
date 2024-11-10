@@ -158,6 +158,7 @@ def sol_gloutonne_stoch_c(Pb, critere = "max"):
         return False
     else:
         Pb.x = sol
+        Pb.eval()
         return True
     
 def fam_sols(Pb, critere, N):
