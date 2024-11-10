@@ -272,7 +272,7 @@ def descente_un_pas_tabou_swap(pb, best_f, critere_tabou, liste_taboue, aspirati
 
 
 def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
-                     init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+                     init = True, aspiration = True, critere = 'max',t_max = 300, timeMaxAmelio = 10):
     """recherche taboue initiale. On s'interrompt si la solution n'a pas été améliorée pendant timeMaxAmelio secondes."""
     liste_taboue = ListeTaboue(taille_liste)
     if init:
@@ -288,7 +288,9 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
         resultat.put((-1, best_x, -1))
         return None
     derniere_amelioration = time.time()
-    while not stopRecherche:
+    s = time.time()
+    t=s
+    while t-s <= t_max:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         if amelioree:
@@ -298,6 +300,7 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
         if tentative - derniere_amelioration >=timeMaxAmelio:
             #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
+        t=time.time()
     
     resultat.put((best_f, best_x, val_initial))
     return None
@@ -309,7 +312,7 @@ def improved(best_f,f,critere):
         return f<best_f
 
 def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
-                     init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+                     init = True, aspiration = True, critere = 'max',t_max = 300, timeMaxAmelio = 10):
     """ recherche taboue initiale avec intensification.
     On realise une recherche locale simple pour chaque solution prometteuse (=proche de la meilleure rencontrée)
     Apres on repart de cette solution comme départ (avec une liste taboue vide)."""
@@ -327,7 +330,9 @@ def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas
         resultat.put((-1, best_x, -1))
         return None
     derniere_amelioration = time.time()
-    while not stopRecherche:
+    s = time.time()
+    t = s
+    while t-s <= t_max:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         if amelioree or abs(best_f - pb.f)/best_f <=0.05: # solution prometteuse
@@ -340,12 +345,13 @@ def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas
         if tentative - derniere_amelioration >=timeMaxAmelio:
             #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
+        t = time.time()
     
     resultat.put((best_f, best_x, val_initial))
     return None
 
 def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
-                     init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+                     init = True, aspiration = True, critere = 'max',t_max = 300, timeMaxAmelio = 10):
     """Comme la précédente avec de la diversification:
         Au bout de la moitié du temps limite sans amélioration, on augmente la taille de la liste taboue"""
     liste_taboue = ListeTaboue(taille_liste)
@@ -362,7 +368,9 @@ def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, cri
         resultat.put((-1, best_x, -1))
         return None
     derniere_amelioration = time.time()
-    while not stopRecherche:
+    s = time.time()
+    t=s
+    while t-s <= t_max:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         if amelioree or abs(best_f - pb.f)/best_f <=0.05: # solution prometteuse
@@ -377,12 +385,13 @@ def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, cri
         if tentative - derniere_amelioration >= timeMaxAmelio:
             #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
+        t=time.time()
     
     resultat.put((best_f, best_x, val_initial))
     return None
 
 def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
-                     init = True, aspiration = True, critere = 'max', timeMaxAmelio = 10):
+                     init = True, aspiration = True, critere = 'max',t_max = 300, timeMaxAmelio = 10):
     """L'intensification est différente: si une solution est bonne on fait la recherche locale mais on poursuite ensuite
     la recherche taboue avec la solution dont on était partie
     Comme la précédente avec de la diversification:
@@ -402,7 +411,9 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
         return None
     derniere_amelioration = time.time()
     augmentation_liste = False
-    while not stopRecherche:
+    s = time.time()
+    t=s
+    while t-s <= t_max:
         amelioree = fn_un_pas(pb, best_f, critere_tabou, liste_taboue, aspiration)
         tentative = time.time()
         
@@ -425,6 +436,7 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
         if tentative - derniere_amelioration >= timeMaxAmelio:
             #print("pas d'amélioration en ", timeMaxAmelio,"s.")
             break
+        t=time.time()
     
     resultat.put((best_f, best_x, val_initial))
     return None
@@ -436,20 +448,13 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
 # recherche taboue classique avec limite de temps.
 def a_recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
-    global stopRecherche
-    stopRecherche = False
+
     resultat = queue.Queue()
     start = time.time()
-    thread = Thread(target=fn_rt, args = [pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
-                                                     init, aspiration, critere, timeMaxAmelio])
-    # Start the thread
-    thread.start()
 
-    # Join your thread with the execution time you want
-    thread.join(timeMax)
-
-    # Set off your flag switch to indicate that the thread should stop
-    stopRecherche = True
+    fn_rt(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_liste,
+          init, aspiration, critere,timeMax, timeMaxAmelio)
+    
     end = time.time()
     best_f, best_x, val_initiale = resultat.get()
     return best_f, best_x, end-start, pb.realisabilite(best_x)==0
@@ -458,20 +463,12 @@ def a_recherche_taboue_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, crit
 # Limite de temps pour le global et limite d'itération hardcodée pour la recherche locale
 def a_recherche_taboue_int_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
-    global stopRecherche
-    stopRecherche = False
     resultat = queue.Queue()
     start = time.time()
-    thread = Thread(target=fn_rt, args = [pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
-                                                     init, aspiration, critere, timeMaxAmelio])
-    # Start the thread
-    thread.start()
+    
+    fn_rt(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
+          init, aspiration, critere,timeMax, timeMaxAmelio)
 
-    # Join your thread with the execution time you want
-    thread.join(timeMax)
-
-    # Set off your flag switch to indicate that the thread should stop
-    stopRecherche = True
     end = time.time()
     best_f, best_x, val_initiale = resultat.get()
     return best_f, best_x, end-start, pb.realisabilite(best_x)==0
@@ -498,5 +495,6 @@ def a_recherche_taboue_depart_mult(pb, fn_rt_gbl, fn_rt, fn_init, fn_un_pas, fn_
         index_best = np.argmin(valeurs)
     
     best_sol = solutions[index_best]
+    real = pb.realisabilite(best_sol)==0
     e = time.time()
-    return best_val, best_sol, e-s, pb.realisabilite(best_sol)==0
+    return best_val, best_sol, e-s, real
