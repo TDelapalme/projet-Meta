@@ -23,19 +23,22 @@ def croisement(parent1,parent2):
     #print('Après croisement : ', init_sol.est_complete(enfant1),init_sol.est_complete(enfant2))
     return(enfant1,enfant2)
 
-def mutation(sol,Pb,alpha):
+def mutation(sol, Pb, alpha):
     t = len(sol)
     nb_agents = Pb.m
-    sol_copy = copy.deepcopy(sol)
+    sol_copy = copy.deepcopy(sol)  
+
     for i in range(t):
-        if random.random()<alpha:
-            a = random.randint(0,nb_agents)
-            sol_copy[i] = a
-            if Pb.realisabilite(sol_copy)==0:
-                sol[i] = a
+        if random.random() < alpha:
+            a = random.randint(0, nb_agents - 1)  # Ensure valid agent index
+            sol_copy[i] = a  
+
+            if Pb.realisabilite(sol_copy) == 0:  
+                sol[i] = a  # Commit mutation if feasible
             else:
-                sol_copy = copy.deepcopy(sol)
-    return(sol)
+                sol_copy[i] = sol[i]  
+
+    return sol
 
 def parent_selection(sols_fam, Pb, critere='max'): # Tournament
     N = len(sols_fam)
@@ -128,7 +131,7 @@ def descente_pop(pop, Pb, max_tot_time, max_amelio_time, critere='max'):
 
     return new_pop
 
-def new_pop(sols_fam, Pb, critere='max'):
+def new_pop(sols_fam, Pb, alpha_mutation=0.1, critere='max'):
     
     N = len(sols_fam)
     children = [[-1 for _ in range(Pb.t)] for _ in range(N)]
@@ -136,7 +139,7 @@ def new_pop(sols_fam, Pb, critere='max'):
     for i in range(N//2):
         p1,p2 = parent_selection(sols_fam, Pb,critere)
         child1, child2 = croisement(p1,p2)
-        child1, child2 = mutation(child1,Pb,0.1),mutation(child2,Pb,0.1)
+        mutation(child1,Pb,alpha_mutation),mutation(child2,Pb,alpha_mutation)
         children[i*2] = child1
         children[i*2+1] = child2
     sorted_parents = sorted(sols_fam, key=lambda x : Pb.evaluate(x), reverse=(critere=='max'))
@@ -151,7 +154,7 @@ def new_pop(sols_fam, Pb, critere='max'):
             i+=1
 
     pop = sorted_parents[:N-len(real_children)] + real_children
-    
+
     return pop
 
 def best_element(pop, Pb, critere):
@@ -184,41 +187,39 @@ def count_real(pop,Pb):
             c+=1
     return c
 
-def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, critere= 'max'):
-
+def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutation=0.1, critere= 'max'):
+    Bests = []
     pop_init = init_sol.fam_sols(Pb,critere,N_init)
     Best = best_element(pop_init,Pb,critere)
-    print('Meileure solution de départ : ',Best[1])
+    Bests.append(Best)
+    print('Meileure solution goutonne : ',Best[1])
 
     pop = descente_pop(pop_init,Pb,max_tot_time, max_amelio_time,critere)
+    Best = best_element(pop,Pb,critere)
+    Bests.append(Best)
     print('Meileure solution après la première descente : ',Best[1])
-    max_stagnation = 3
+    max_stagnation = 5
     i_stagnation = 0
     i = 0
     
     while i<N_gen_max and i_stagnation<max_stagnation:
         print(f'Gen {i} :')
-        children = new_pop(pop,Pb,critere)
+        children = new_pop(pop,Pb,alpha_mutation,critere)
         #print(f"Nb d'enfants réalisables avant descente : {count_real(children,Pb)}")
         pop = descente_pop(children,Pb,max_tot_time, max_amelio_time,critere)
         #print(f"Nb d'enfants réalisables apres descente : {count_real(pop,Pb)}")
         best_child = best_element(pop,Pb,critere)
-        if best_child[1] :
-            if critere=='max': 
-                if best_child[1]>Best[1] :
-                    Best = copy.deepcopy(best_child)
-                    i_stagnation=0
-                else:
-                    i_stagnation+=1
-            else:
-                if best_child[1]<Best[1] :
-                    Best = copy.deepcopy(best_child)
-                    i_stagnation=0
-                else:
-                    i_stagnation+=1
-        else:
-            i_stagnation+=1
 
+        if best_child[1] is not None:
+            if (critere == 'max' and best_child[1] > Best[1]) or (critere == 'min' and best_child[1] < Best[1]):
+                Best = copy.deepcopy(best_child)
+                i_stagnation = 0
+            else:
+                i_stagnation += 1
+        else:
+            i_stagnation += 1
+        
+        Bests.append(best_child)
         print(f'Meilleure sol de la generation actuelle : {best_child[1]}')
         i+=1
 
@@ -227,9 +228,8 @@ def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, critere= 'ma
     else:
         print('Maximun de générations atteint')
 
-    print("Meilleure solution sur l'evolution : ",Best[1])
-
-    return Best
+    #print("Meilleure solution sur l'evolution : ",Best[1])
+    return Bests
 
 
 
