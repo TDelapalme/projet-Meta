@@ -285,7 +285,7 @@ def recherche_taboue(pb, resultat, fn_init, fn_un_pas, critere_tabou, taille_lis
     if not init_sol.est_complete(pb.x):
         print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
         pb.f = -1
-        resultat.put((-1, best_x, -1))
+        resultat.put((None, best_x, -1))
         return None
     derniere_amelioration = time.time()
     s = time.time()
@@ -327,7 +327,7 @@ def recherche_taboue_intensification(pb, resultat, fn_init, fn_un_pas, fn_un_pas
     if not init_sol.est_complete(pb.x):
         print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
         pb.f = -1
-        resultat.put((-1, best_x, -1))
+        resultat.put((None, best_x, -1))
         return None
     derniere_amelioration = time.time()
     s = time.time()
@@ -365,7 +365,7 @@ def recherche_taboue_int_div(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, cri
     if not init_sol.est_complete(pb.x):
         print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
         pb.f = -1
-        resultat.put((-1, best_x, -1))
+        resultat.put((None, best_x, -1))
         return None
     derniere_amelioration = time.time()
     s = time.time()
@@ -407,7 +407,7 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
     if not init_sol.est_complete(pb.x):
         print("solution initiale non réalisable: toutes les tâches ne sont pas affectées.")
         pb.f = -1
-        resultat.put((-1, best_x, -1))
+        resultat.put((None, best_x, -1))
         return None
     derniere_amelioration = time.time()
     augmentation_liste = False
@@ -465,7 +465,7 @@ def a_recherche_taboue_int_timeMax(pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, 
                              init = True, aspiration = True, critere = 'max', timeMax = 300, timeMaxAmelio = 10):
     resultat = queue.Queue()
     start = time.time()
-    
+
     fn_rt(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, critere_tabou, taille_liste,
           init, aspiration, critere,timeMax, timeMaxAmelio)
 

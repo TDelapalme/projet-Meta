@@ -100,7 +100,7 @@ def sol_gloutonne_2(Pb, critere = 'max'):
             break
     Pb.eval()
     Pb.capacites_residuelles()
-    return Pb.x
+    return Pb.realisabilite(Pb.x)==0
 
 def est_complete(X):
     # Vérifie si toutes les tâches sont affectées
