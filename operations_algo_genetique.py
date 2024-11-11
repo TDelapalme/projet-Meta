@@ -55,7 +55,11 @@ def parent_selection(sols_fam, Pb, critere='max'): # Tournament
 
 
 def descente_pop_old(pop, Pb, max_tot_time, max_amelio_time, critere='max'):
+    """Amélioration d'une population par recherche taboue
 
+    Returns:
+        pop: population améliorée
+    """
     # nouvelle pop améliorée
     new_pop = [[]] * len(pop)
 
@@ -188,66 +192,91 @@ def count_real(pop,Pb):
     return c
 
 def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutation=0.1, critere='max', verbose=False):
-    Bests = []
-    pop_init = init_sol.fam_sols(Pb, critere, N_init)
+    """
+    Fonction principale pour l'évolution d'une population, à partir d'un problème donné, la foonction génrère 
+    une première famille de solution admissible puis l'améliore avec une recherche taboue.
+    A chaque nouvelle génération la population évolue (croisement + mutation) puis est amélioré par 
+    recherche taboue sur chaque individu.
+    Renvoie le meilleur individu et son évaluation pour chaque génération.
+    """
+    
+    Bests = []  # Liste pour stocker les meilleures solutions à chaque génération
+    
+    # Génération de la population initiale à partir des solutions gloutonnes
+    pop_init = init_sol.fam_sols(Pb, critere, N_init) 
+    
     if verbose:
         for sol in pop_init:
             print(sol)
-    # Filter out None elements
+    
+    # Filtrage des éléments None dans la population initiale
     pop_init = [sol for sol in pop_init if sol is not None]
 
+    # Si la population est vide (aucune solution gloutonne valide), on arrête et retourne None
     if not pop_init:
         print("Pas de solution gloutonne trouvée dans le temps imparti")
         return None
     
+    # Trouver la meilleure solution dans la population initiale
     Best = best_element(pop_init, Pb, critere)
     Bests.append(Best)
     
     if verbose:
         print('Meilleure solution gloutonne :', Best[1])
 
+    # Amélioration de la population initiale avec recherche taboue
     pop = descente_pop(pop_init, Pb, max_tot_time, max_amelio_time, critere)
+    
+    # Trouver la meilleure solution après la descente
     Best = best_element(pop, Pb, critere)
     Bests.append(Best)
     
     if verbose:
         print('Meilleure solution après la première descente :', Best[1])
 
-    max_stagnation = 5
-    i_stagnation = 0
-    i = 0
+    max_stagnation = 5  # Nombre maximal de générations sans amélioration avant d'arrêter
+    i_stagnation = 0  # Compteur de stagnation
+    i = 0  # Compteur de générations
     
     while i < N_gen_max and i_stagnation < max_stagnation:
         if verbose:
             print(f'Gen {i} :')
 
+        # Création des enfants (nouvelles solutions) par mutation ou croisement
         children = new_pop(pop, Pb, alpha_mutation, critere)
+        
+        # Application de la descente sur la nouvelle population
         pop = descente_pop(children, Pb, max_tot_time, max_amelio_time, critere)
+        
+        # Trouver la meilleure solution parmi les enfants
         best_child = best_element(pop, Pb, critere)
 
+        # Vérification si la solution enfant est meilleure que la meilleure solution trouvée
         if best_child[1] is not None:
             if (critere == 'max' and best_child[1] > Best[1]) or (critere == 'min' and best_child[1] < Best[1]):
-                Best = copy.deepcopy(best_child)
-                i_stagnation = 0
+                Best = copy.deepcopy(best_child)  # Mise à jour de la meilleure solution
+                i_stagnation = 0  # Réinitialisation du compteur de stagnation
             else:
-                i_stagnation += 1
+                i_stagnation += 1  # Incrémentation du compteur de stagnation
         else:
-            i_stagnation += 1
+            i_stagnation += 1  # Incrémentation si la solution est None
         
-        Bests.append(best_child)
+        Bests.append(best_child)  # Ajout de la meilleure solution de cette génération à la liste des meilleures solutions
         
         if verbose:
+            # Affichage de la meilleure solution de la génération actuelle
             print(f'Meilleure sol de la génération actuelle : {best_child[1]}')
         
-        i += 1
+        i += 1  # Passage à la génération suivante
 
     if verbose:
         if i_stagnation == max_stagnation:
-            print('Stagnation de la meilleure solution.')
+            print('Stagnation de la meilleure solution.') 
         else:
             print('Maximum de générations atteint')
 
-    return Bests
+    return Bests  # Retourner les meilleures solutions trouvées à chaque génération
+
 
 
 """
