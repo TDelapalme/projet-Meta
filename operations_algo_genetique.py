@@ -92,7 +92,7 @@ def improve_solution(sol, Pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls, critere_t
     Pb.x = sol
     
     # Perform tabu search on the solution
-    _, best_x, _, _ = rt.a_recherche_taboue_timeMax(
+    _, best_x, _, _ = rt.a_recherche_taboue_int_timeMax(
         Pb, fn_rt, fn_init, fn_un_pas, fn_un_pas_ls,
         critere_tabou, taille_liste, init=initialisation,
         aspiration=aspiration, critere=critere, timeMax=timeMax,
@@ -104,7 +104,7 @@ def descente_pop(pop, Pb, max_tot_time, max_amelio_time, critere='max'):
     # Parameters for tabu search
     taille_liste = int(Pb.t / 4)
     fn_init = init_sol.sol_gloutonne_2
-    fn_rt = rt.recherche_taboue
+    fn_rt = rt.recherche_taboue_int_div_2
     fn_un_pas_ls = v.un_pas_reaffectation
     critere_tabou = rt.tabou_liste_tache_reaffectation
     initialisation = False
@@ -187,28 +187,38 @@ def count_real(pop,Pb):
             c+=1
     return c
 
-def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutation=0.1, critere= 'max'):
-    Bests = []
-    pop_init = init_sol.fam_sols(Pb,critere,N_init)
-    Best = best_element(pop_init,Pb,critere)
-    Bests.append(Best)
-    print('Meileure solution goutonne : ',Best[1])
+import copy
 
-    pop = descente_pop(pop_init,Pb,max_tot_time, max_amelio_time,critere)
-    Best = best_element(pop,Pb,critere)
+def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutation=0.1, critere='max', verbose=False):
+    Bests = []
+    pop_init = init_sol.fam_sols(Pb, critere, N_init)
+    if pop_init[0] == None:
+        print("Pas de solution gloutonne trouvée dans le temps imparti")
+        return None
+    Best = best_element(pop_init, Pb, critere)
     Bests.append(Best)
-    print('Meileure solution après la première descente : ',Best[1])
+    
+    if verbose:
+        print('Meilleure solution gloutonne :', Best[1])
+
+    pop = descente_pop(pop_init, Pb, max_tot_time, max_amelio_time, critere)
+    Best = best_element(pop, Pb, critere)
+    Bests.append(Best)
+    
+    if verbose:
+        print('Meilleure solution après la première descente :', Best[1])
+
     max_stagnation = 5
     i_stagnation = 0
     i = 0
     
-    while i<N_gen_max and i_stagnation<max_stagnation:
-        print(f'Gen {i} :')
-        children = new_pop(pop,Pb,alpha_mutation,critere)
-        #print(f"Nb d'enfants réalisables avant descente : {count_real(children,Pb)}")
-        pop = descente_pop(children,Pb,max_tot_time, max_amelio_time,critere)
-        #print(f"Nb d'enfants réalisables apres descente : {count_real(pop,Pb)}")
-        best_child = best_element(pop,Pb,critere)
+    while i < N_gen_max and i_stagnation < max_stagnation:
+        if verbose:
+            print(f'Gen {i} :')
+
+        children = new_pop(pop, Pb, alpha_mutation, critere)
+        pop = descente_pop(children, Pb, max_tot_time, max_amelio_time, critere)
+        best_child = best_element(pop, Pb, critere)
 
         if best_child[1] is not None:
             if (critere == 'max' and best_child[1] > Best[1]) or (critere == 'min' and best_child[1] < Best[1]):
@@ -220,17 +230,19 @@ def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutati
             i_stagnation += 1
         
         Bests.append(best_child)
-        print(f'Meilleure sol de la generation actuelle : {best_child[1]}')
-        i+=1
+        
+        if verbose:
+            print(f'Meilleure sol de la génération actuelle : {best_child[1]}')
+        
+        i += 1
 
-    if i_stagnation == max_stagnation:
-        print('Stagnation de la meilleure solution.')
-    else:
-        print('Maximun de générations atteint')
+    if verbose:
+        if i_stagnation == max_stagnation:
+            print('Stagnation de la meilleure solution.')
+        else:
+            print('Maximum de générations atteint')
 
-    #print("Meilleure solution sur l'evolution : ",Best[1])
     return Bests
-
 
 
 """

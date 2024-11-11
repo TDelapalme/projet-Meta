@@ -2,8 +2,10 @@ import readfiles
 import random
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
-import copy
+import time
+import sys
 
+sys.setrecursionlimit(2000)
 
 # Param
 alpha = 0.4
@@ -109,7 +111,7 @@ def est_complete(X):
     # Vérifie si toutes les tâches sont affectées
     return all(x != -1 for x in X)
 
-def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
+def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations,start):
 
     # Si toutes les variables sont assignées, retourner la solution
     if est_complete(sol):
@@ -120,16 +122,17 @@ def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations):
     task = np.random.choice(unassigned_tasks)
 
     agent_values = [affectations[0][0] for affectations in sorted_affectations if affectations[0][1]==task]
-
+    
     for a in agent_values:
         # On essaye une affectation
+    
         if (Pb.realisabilite_agent(a, sol) - Pb.r[a][task] >= 0):
             sol[task] = a
 
             #print(f"Branchement : {task}={a}")
 
             # Recursive backtracking with changes tracked
-            result = sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations)
+            result = sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations, start)
             
             if result:  # Si une solution est trouvée, la retourner
                 return result
@@ -154,7 +157,8 @@ def sol_gloutonne_stoch_4(Pb, critere = 'max'):
 
     t = Pb.t
     sol = [-1] * t
-    return sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations)
+    start = time.time()
+    return sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations,start)
 
 def sol_gloutonne_stoch_c(Pb, critere = "max"):
     sol = sol_gloutonne_stoch_4(Pb, critere)
@@ -167,10 +171,23 @@ def sol_gloutonne_stoch_c(Pb, critere = "max"):
         return True
     
 def fam_sols(Pb, critere, N):
+    solutions_famille = []
+    timeout = 15
     with ProcessPoolExecutor() as executor:
+        # Submit all tasks
         futures = [executor.submit(sol_gloutonne_stoch_4, Pb, critere) for _ in range(N)]
-        solutions_famille = [future.result() for future in futures]
         
+        # Collect results with timeout
+        for future in futures:
+            try:
+                # Attempt to get the result within the specified timeout
+                result = future.result(timeout=timeout)
+                solutions_famille.append(result)
+            except TimeoutError:
+                # If the function times out, append None or another marker
+                solutions_famille.append(None)  # or handle as appropriate for your use case
+                #print("Backtracking search timed out.")
+
     return solutions_famille
 
 if __name__=="__main__":
