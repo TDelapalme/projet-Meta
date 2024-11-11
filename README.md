@@ -3,7 +3,12 @@
 Tadeo Delapalme
 Dimitri Delpech de Saint Guilhem
 
-Ce projet implémente divers heuristique pour le problème d'affectation généralisée.
+Ce projet implémente divers heuristiques pour le problème d'affectation généralisée.
+- une solution gloutonne déterministe.
+- une solution gloutonne stochastique.
+- recherche locale (montee/descente) pour deux structures de voisinages.
+- recherche taboue (basique, diversification, intensification) pour ces mêmes voisinages.
+- algorithme mmémétique utilisant la recherche taboue.
 
 ### Dossiers
 - instances : regroupe les divers instances du projet
