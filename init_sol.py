@@ -183,8 +183,8 @@ def sol_gloutonne_stoch_4(Pb, timeout, critere = 'max'):
             print('Pas de solution gloutonne')"""
         return sol_2
 
-def sol_gloutonne_stoch_c(Pb, critere = "max"):
-    sol = sol_gloutonne_stoch_4(Pb, critere)
+def sol_gloutonne_stoch_c(Pb, critere = "max", timeout = 1):
+    sol = sol_gloutonne_stoch_4(Pb, timeout, critere)
     if type(sol)==type(None):
         Pb.f = -1
         return False
