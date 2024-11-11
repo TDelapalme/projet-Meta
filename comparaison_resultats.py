@@ -3,6 +3,8 @@ import os
 import ast
 import numpy as np
 
+# fichier pour extraire les résultats, les comparer à la valeur optimale et enregistrer.
+
 global df_val_opt
 df_val_opt = pd.read_csv("val_opt.csv")
 def get_val_opt(df, instance, id, t, m):
@@ -10,6 +12,7 @@ def get_val_opt(df, instance, id, t, m):
     return ligne_val["val"].iloc[0]
 
 def resultat(path, file, crit):
+    """La fonction lit le fichier de résultat file et en crée un nouveau pour donner les resultats du rapport."""
     df = pd.read_csv(path + file)
     output = []
     for index, row in df.iterrows():
