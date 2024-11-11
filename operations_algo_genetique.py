@@ -27,7 +27,7 @@ def mutation(sol, Pb, alpha):
     t = len(sol)
     nb_agents = Pb.m
     sol_copy = copy.deepcopy(sol)  
-
+    count = 0
     for i in range(t):
         if random.random() < alpha:
             a = random.randint(0, nb_agents - 1)  # Ensure valid agent index
@@ -35,9 +35,10 @@ def mutation(sol, Pb, alpha):
 
             if Pb.realisabilite(sol_copy) == 0:  
                 sol[i] = a  # Commit mutation if feasible
+                count+=1
             else:
                 sol_copy[i] = sol[i]  
-
+    #print('nb mutations', count)
     return sol
 
 def parent_selection(sols_fam, Pb, critere='max'): # Tournament
@@ -153,7 +154,7 @@ def new_pop(sols_fam, Pb, alpha_mutation=0.1, critere='max'):
     real_children = []
     i = 0
     for child in sorted_children:
-        if Pb.realisabilite(child) == 0 and i<(2*N)//3:
+        if Pb.realisabilite(child) == 0 and i<(2*N)//3 and init_sol.est_complete(child):
             real_children.append(child)
             i+=1
 
@@ -204,7 +205,7 @@ def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutati
     
     # Génération de la population initiale à partir des solutions gloutonnes
     pop_init = init_sol.fam_sols(Pb, critere, N_init) 
-    
+
     if verbose:
         for sol in pop_init:
             print(sol)
@@ -244,7 +245,10 @@ def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutati
 
         # Création des enfants (nouvelles solutions) par mutation ou croisement
         children = new_pop(pop, Pb, alpha_mutation, critere)
-        
+    
+        for x in children:
+            if not init_sol.est_complete(x):
+                print(x)
         # Application de la descente sur la nouvelle population
         pop = descente_pop(children, Pb, max_tot_time, max_amelio_time, critere)
         
