@@ -29,6 +29,7 @@ Ce projet implémente divers heuristiques pour le problème d'affectation géné
     - avec ou sans diversification ou intensification
 - operations_algo_genetique.py
 
-- res_rl_rt.ipynb: notebook pour exécuter la recherche locale et taboue sur les instances
+- res_rl_rt.ipynb: notebook pour exécuter la recherche locale et taboue sur les instances.
 - comparaison_borne.py: compare les résultats produits par res_rl_rt.ipynb avec leur valeur optimale.
+- readfiles.py: permet de lire les instances.
 
