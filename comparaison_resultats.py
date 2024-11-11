@@ -3,50 +3,75 @@ import os
 import ast
 import numpy as np
 
-def lire_valeur(s, cle = 'val'):
-    # Convertir la chaîne en dictionnaire
-    try:
-        data = ast.literal_eval(s)
-        # Retourner la valeur associée à 'val'
-        return data.get(cle)
-    except (ValueError, SyntaxError):
-        return None
-    
+global df_val_opt
+df_val_opt = pd.read_csv("val_opt.csv")
+def get_val_opt(df, instance, id, t, m):
+    ligne_val = df[(df['instance'] == instance) & (df['id'] == id) & (df['t'] == t)& (df['m'] == m)]
+    return ligne_val["val"].iloc[0]
 
-instances = ["gap1","gap2", "gap3","gap4","gap5","gap6","gap7","gap8","gap9","gap10","gap11","gap12"]
-
-
-if __name__=='__main__':
-    val_opt = pd.read_csv("val_opt.csv")
-    for file in os.listdir():
-        
-        if file[-4:]==".csv" and file != "val_opt.csv":
-            res = pd.read_csv(file)
-            res_pd = pd.DataFrame()
-            res_df = pd.DataFrame(columns=['file', 'id', 'val', 'saut', 'erreur', 'temps', 'val opt'])
-            index = 0
-            for instance in instances:
-                for i in range(5):
-                    v_opt = lire_valeur(val_opt[instance][i])
-                    val = lire_valeur(res[instance][i])
-                    if val == -1:
-                        val = np.nan
-                    saut = v_opt - val
-                    erreur = saut/v_opt
-                    temps = lire_valeur(res[instance][i], cle='time')
-                    nv_ligne = {"file":instance,
-                                "id":i,
+def resultat(path, file, crit):
+    df = pd.read_csv(path + file)
+    output = []
+    for index, row in df.iterrows():
+        instance = row["instance"]
+        id = row["id"]
+        t = row["t"]
+        m = row["m"]
+        val = row["val"]
+        temps = round(row["time"],3)
+        if crit=='max':
+            t = 30
+            m = 10
+        v_opt = get_val_opt(df_val_opt, instance, id, t, m)
+        if val == -1:
+            val = np.nan
+        if crit =='max':
+            saut = v_opt - val
+        else:
+            saut = val-v_opt
+        erreur = round(saut/v_opt*100,2)
+        t = row["t"]
+        m = row["m"]
+        if crit == 'max':
+            nom_instance = "c"+str(m)+str(t)+"-"+str(id+1)
+        elif instance[-1] in ['a','b','c','d']:
+            nom_instance = instance[-1]+str(m)+"-"+str(t)
+        else:
+            nom_instance= instance
+        output.append({"instance":nom_instance,
+                                "id":id,
                                 "val":val,
                                 "saut":saut,
                                 "erreur":erreur,
                                 "temps":temps,
-                                "val opt":v_opt}
-                    res_df.loc[index] = nv_ligne
-                    index +=1
+                                "val opt":v_opt})
+    res = pd.DataFrame(output)
 
-            res_df.to_csv("./resultats/complet_"+file)
-            print(file, "\t\t",res_df["erreur"].mean())
+    res.to_csv("./resultats/comparaison_borne/comp_"+file)
+    print(file)
 
+if __name__=='__main__':
+
+    file_res_max = ['max_resultats-1-12_rl_depMult_reaffect_stoch_50_5.csv',
+                    'max_resultats-1-12_rt_depMult_reaffect_stoch_4_tache_480_9.csv']
+    file_res_min = ['min_resultats-a-c_rl_depMult_reaffect_stoch_50_5.csv',
+                    'min_resultats-a-c_rt_depMult_reaffect_stoch_4_tache_480_60.csv',
+                    'min_resultats-a-c_rt_depMult_reaffect_stoch_4_tache_480_9.csv',
+                    'min_resultats-d_rl_depMult_reaffect_stoch_50_5.csv',
+                    'min_resultats-d_rt_depMult_intDiv_reaffect_stoch_4_tache_480_9.csv',
+                    'min_resultats-d_rt_depMult_reaffect_stoch_4_tache_480_60.csv',
+                    'min_resultats_bonus_rl_depMult_reaffect_stoch_50_5.csv',
+                    'min_resultats_bonus_rt_reaffect_stoch_360_120.csv']
+    
+    for file in file_res_max:
+        resultat("resultats/",file, 'max')
+    for file in file_res_min:
+        resultat("resultats/",file, 'min')
+
+
+
+
+    
 
             
 
