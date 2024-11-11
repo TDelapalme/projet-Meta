@@ -218,6 +218,17 @@ def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutati
         print("Pas de solution gloutonne trouvée dans le temps imparti")
         return None
     
+    # Si la population initiale est trop petite (pas assez grande pour une évolution interessante), on retourne la meilleure
+    if len(pop_init)<10:
+        print("Pas assez de solutions gloutonnes trouvée dans le temps imparti")
+        Best = best_element(pop_init, Pb, critere)
+        Bests.append(Best)
+        pop = descente_pop(pop_init, Pb, max_tot_time, max_amelio_time, critere)
+        # Trouver la meilleure solution après la descente
+        Best = best_element(pop, Pb, critere)
+        Bests.append(Best)
+        return Bests
+    
     # Trouver la meilleure solution dans la population initiale
     Best = best_element(pop_init, Pb, critere)
     Bests.append(Best)
@@ -242,10 +253,10 @@ def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutati
     while i < N_gen_max and i_stagnation < max_stagnation:
         if verbose:
             print(f'Gen {i} :')
-
+            
         # Création des enfants (nouvelles solutions) par mutation ou croisement
         children = new_pop(pop, Pb, alpha_mutation, critere)
-    
+
         for x in children:
             if not init_sol.est_complete(x):
                 print(x)
