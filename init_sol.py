@@ -4,6 +4,7 @@ import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 import time
 import sys
+import copy
 
 sys.setrecursionlimit(2000)
 
@@ -77,6 +78,16 @@ def sort_affectations_crit(Pb, critere = 'max'):
 
     return couples_tries  
 
+def sort_affectations_crit_moindre_ressources(Pb):
+
+    # Tri des couples en fonction des moins consommateurs en ressources si le premier backtrack ne marche pas
+    couples = [((i, j),-1,-1) for i in range(Pb.m) for j in range(Pb.t)]
+
+    # Tri des couples en fonction de la consommation en ressources croissante
+    couples_tries = sorted(couples, key=lambda c: Pb.r[c[0][0]][c[0][1]])
+
+    return couples_tries
+
 def sol_gloutonne(Pb):
     couples_tries = sort_affectations_crit(Pb)
     sol = [-1]*Pb.t
@@ -111,40 +122,34 @@ def est_complete(X):
     # Vérifie si toutes les tâches sont affectées
     return all(x != -1 for x in X)
 
-def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations,start):
-
-    # Si toutes les variables sont assignées, retourner la solution
+def sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations, start, max_time):
+    # If all tasks are assigned, return the solution
     if est_complete(sol):
+        #print(sol)
         return sol
 
-    unassigned_tasks = [i for i in range(Pb.t) if sol[i]==-1]
+    # Check if we've exceeded the time limit
+    if time.time() - start > max_time:
+        return None  # Timeout occurred
 
+    unassigned_tasks = [i for i in range(Pb.t) if sol[i] == -1]
     task = np.random.choice(unassigned_tasks)
 
-    agent_values = [affectations[0][0] for affectations in sorted_affectations if affectations[0][1]==task]
-    
+    agent_values = [affectations[0][0] for affectations in sorted_affectations if affectations[0][1] == task]
+
     for a in agent_values:
-        # On essaye une affectation
-    
-        if (Pb.realisabilite_agent(a, sol) - Pb.r[a][task] >= 0):
+        # Try assigning the task to an agent
+        if Pb.realisabilite_agent(a, sol) - Pb.r[a][task] >= 0:
             sol[task] = a
-
-            #print(f"Branchement : {task}={a}")
-
-            # Recursive backtracking with changes tracked
-            result = sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations, start)
-            
-            if result:  # Si une solution est trouvée, la retourner
+            result = sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations, start, max_time)
+            if result:
                 return result
 
-            #print('Echec backtrack')
+            # Backtrack
             sol[task] = -1
-    #print(f"Pas de valeur consitante pour {task}")
     return None
-     
 
-
-def sol_gloutonne_stoch_4(Pb, critere = 'max'):
+def sol_gloutonne_stoch_4(Pb, timeout, critere = 'max'):
 
     # On bruite la liste trié pour obtenir des solutions différentes à chaque appel
     alpha = 0.1
@@ -158,7 +163,25 @@ def sol_gloutonne_stoch_4(Pb, critere = 'max'):
     t = Pb.t
     sol = [-1] * t
     start = time.time()
-    return sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations,start)
+
+    sol_1 = sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations,start,timeout)
+
+    if sol_1:
+        #print("Solution gloutonne par la 1ere heuristique")
+        return sol_1
+    else:
+        #print('Pas de solution avec le premier algo glouton')
+        sorted_affectations = sort_affectations_crit_moindre_ressources(Pb)
+        #print(sorted_affectations)
+        sol = [-1] * t
+        start = time.time()
+        sol_2 = sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations,start,timeout*2)
+        """print(sol_2)
+        if sol_2:
+            print("Solution gloutonne par la 2eme heuristique")
+        else:
+            print('Pas de solution gloutonne')"""
+        return sol_2
 
 def sol_gloutonne_stoch_c(Pb, critere = "max"):
     sol = sol_gloutonne_stoch_4(Pb, critere)
@@ -170,24 +193,22 @@ def sol_gloutonne_stoch_c(Pb, critere = "max"):
         Pb.eval()
         return True
     
-def fam_sols(Pb, critere, N):
+def fam_sols(Pb, critere, N, timeout=10):
     solutions_famille = []
-    timeout = 15
     with ProcessPoolExecutor() as executor:
-        # Submit all tasks
-        futures = [executor.submit(sol_gloutonne_stoch_4, Pb, critere) for _ in range(N)]
+        
+        futures = [
+            executor.submit(sol_gloutonne_stoch_4, copy.deepcopy(Pb), timeout, critere)
+            for _ in range(N)
+        ]
         
         # Collect results with timeout
         for future in futures:
             try:
-                # Attempt to get the result within the specified timeout
                 result = future.result(timeout=timeout)
                 solutions_famille.append(result)
             except TimeoutError:
-                # If the function times out, append None or another marker
-                solutions_famille.append(None)  # or handle as appropriate for your use case
-                #print("Backtracking search timed out.")
-
+                solutions_famille.append(None)
     return solutions_famille
 
 if __name__=="__main__":
