@@ -187,14 +187,19 @@ def count_real(pop,Pb):
             c+=1
     return c
 
-import copy
-
 def evolution(Pb, N_init, N_gen_max, max_tot_time, max_amelio_time, alpha_mutation=0.1, critere='max', verbose=False):
     Bests = []
     pop_init = init_sol.fam_sols(Pb, critere, N_init)
-    if pop_init[0] == None:
+    if verbose:
+        for sol in pop_init:
+            print(sol)
+    # Filter out None elements
+    pop_init = [sol for sol in pop_init if sol is not None]
+
+    if not pop_init:
         print("Pas de solution gloutonne trouvée dans le temps imparti")
         return None
+    
     Best = best_element(pop_init, Pb, critere)
     Bests.append(Best)
     
