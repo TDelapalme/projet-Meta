@@ -53,6 +53,7 @@ def resultat(path, file, crit):
     res.to_csv("./resultats/comparaison_borne/comp_"+file)
     print(file)
 
+
 if __name__=='__main__':
 
     file_res_max = ['max_resultats-1-12_rl_depMult_reaffect_stoch_50_5.csv',
