@@ -10,6 +10,7 @@ Ce projet implémente divers heuristiques pour le problème d'affectation géné
 - recherche taboue (basique, diversification, intensification) pour ces mêmes voisinages.
 - algorithme mmémétique utilisant la recherche taboue.
 
+## Architecture du dépôt:
 ### Dossiers
 - instances : regroupe les divers instances du projet
 - resultats : regroupe les résultats produits par res_rl_rt.ipynb pour la recherche locale et la recherche taboue
