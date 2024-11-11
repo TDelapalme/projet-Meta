@@ -27,7 +27,9 @@ Ce projet implémente divers heuristiques pour le problème d'affectation géné
     - implémente divers algorithmes de recherche taboue pour ces mêmes voisinages.
     - différents critères de liste taboue
     - avec ou sans diversification ou intensification
-- operations_algo_genetique.py
+- operations_algo_genetique.py:
+    - implémente les opérations de sélection, de croisements et de mutation
+    - implémente l'algorithme mémétique qui réalise une recherche tabou sur chaque individu de chaque génération.
 
 - res_rl_rt.ipynb: notebook pour exécuter la recherche locale et taboue sur les instances.
 - comparaison_borne.py: compare les résultats produits par res_rl_rt.ipynb avec leur valeur optimale.
