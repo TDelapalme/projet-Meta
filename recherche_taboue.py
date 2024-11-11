@@ -454,6 +454,7 @@ def recherche_taboue_int_div_2(pb, resultat, fn_init, fn_un_pas, fn_un_pas_ls, c
             best_f = pb.f
             best_x = np.copy(pb.x)
             liste_taboue.reduire(taille_liste)
+            liste_taboue.vider()
             augmentation_liste = False # remise a 0
             derniere_amelioration = time.time()
 
