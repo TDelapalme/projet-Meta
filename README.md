@@ -15,6 +15,7 @@ Ce projet implémente divers heuristiques pour le problème d'affectation géné
 - instances : regroupe les divers instances du projet
 - resultats : regroupe les résultats produits par res_rl_rt.ipynb pour la recherche locale et la recherche taboue
     - comparaison_borne: les fichiers de résultats pour ceux présentés dans le rapport
+- resultats_T : regroupe les résultats produits par re_evo.ipynb pour la recherche évolutionnaire et la recherche gloutonne
 
 ### Code
 - init_sol.py: 
@@ -32,6 +33,7 @@ Ce projet implémente divers heuristiques pour le problème d'affectation géné
     - implémente l'algorithme mémétique qui réalise une recherche tabou sur chaque individu de chaque génération.
 
 - res_rl_rt.ipynb: notebook pour exécuter la recherche locale et taboue sur les instances.
+- res_evo.ipynb: notebook pour exécuter la recherche evolutionnaire sur les instances.
 - comparaison_borne.py: compare les résultats produits par res_rl_rt.ipynb avec leur valeur optimale.
 - readfiles.py: permet de lire les instances.
 

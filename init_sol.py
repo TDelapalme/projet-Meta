@@ -167,10 +167,10 @@ def sol_gloutonne_stoch_4(Pb, timeout, critere = 'max'):
     sol_1 = sol_gloutonne_stoch_backtrack(Pb, sol, sorted_affectations,start,timeout)
 
     if sol_1:
-        print("Solution gloutonne par la 1ere heuristique")
+        #print("Solution gloutonne par la 1ere heuristique")
         return sol_1
     else:
-        print('Pas de solution avec le premier algo glouton')
+        #print('Pas de solution avec le premier algo glouton')
         sorted_affectations = sort_affectations_crit_moindre_ressources(Pb)
         #print(sorted_affectations)
         sol = [-1] * t
